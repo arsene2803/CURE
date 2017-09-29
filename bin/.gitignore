@@ -1,7 +1,4 @@
-/partitioning/
-/sampling/
-/util/
-/mapper/
-/Reducer/
-/Driver/
 /driver/
+/mapper/
+/util/
+/Reducer/

@@ -18,6 +18,11 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 public class CureDriver {
 	public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
 		
+		//Checking for the number of arguments
+		if(args.length != 3) {
+			throw new IllegalArgumentException("Arguments expected- input output Number_Of_partitions");
+		}
+		
 		//creating configuration object
 		Configuration conf=new Configuration();
 		Job job=Job.getInstance(conf,"CUREJOB");
@@ -27,6 +32,7 @@ public class CureDriver {
 	    job.setReducerClass(Reducer.Curereducer.class);
 	    job.setOutputKeyClass(LongWritable.class);
 	    job.setOutputValueClass(Text.class);
+	    job.setNumReduceTasks(Integer.parseInt(args[2]));
 	    //setting the format
 	    job.setInputFormatClass(util.SamplingInputFormat.class);
 	    FileInputFormat.addInputPath(job, new Path(args[0]));
