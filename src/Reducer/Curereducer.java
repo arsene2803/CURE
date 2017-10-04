@@ -34,7 +34,7 @@ public class Curereducer extends Reducer<LongWritable, Text, LongWritable, Text>
 			cl.add(new Cluster(null,temp,0));
 		}
 		
-		//compute the closest cluster for indivdual clusters
+		//compute the closest cluster for individual clusters
 		for(int i=0;i<cl.size();i++) {
 			double min_distance=Double.MAX_VALUE;
 			int min_cluster_index=i;
