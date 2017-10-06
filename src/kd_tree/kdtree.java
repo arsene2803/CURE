@@ -58,5 +58,62 @@ public class kdtree {
 		}
 		
 	}
+	public static class NN{
+		Point pnt_in;
+		Point pnt_nn=null;
+		double min_dist=Double.MAX_VALUE;
+		//constructor
+		public NN(Point pnt_in, double min_dist) {
+			super();
+			this.pnt_in = pnt_in;
+			this.min_dist = min_dist;
+		}
+		public NN(Point pnt_in) {
+			super();
+			this.pnt_in = pnt_in;
+		}
+		
+		void update(Node node) {
+			double dx=node.pnt.getX()-pnt_in.getX();
+			double dy=node.pnt.getY()-pnt_in.getY();
+			double cur_dist=Math.sqrt(dx*dx+dy*dy);
+			if(cur_dist<min_dist) {
+				pnt_nn=node.pnt;
+				min_dist=cur_dist;
+			}
+		}		
+		
+	}
+	
+	public NN getNN(Point point,double min_dist) {
+		NN nn=new NN(point,min_dist);
+		getNN(nn,root);
+		return nn;
+	}
+
+	private void getNN(NN nn, Node node) {
+		// TODO Auto-generated method stub
+		if(node.isLeaf()) {
+			nn.update(node);
+		}
+		else {
+			double dist_hp=planedistnace(node,nn.pnt_in);
+			//check the half space
+			getNN(nn,(dist_hp<0)?node.L:node.R);
+			//checking the other half
+			if(dist_hp<nn.min_dist)
+				getNN(nn,(dist_hp<0)?node.L:node.R);
+			
+		}
+		
+	}
+
+	private double planedistnace(Node node, Point pnt_in) {
+		// TODO Auto-generated method stub
+		if((node.depth&1)==0)
+			return pnt_in.getX()-node.pnt.getX();
+		else
+			return pnt_in.getY()-node.pnt.getY();
+	}
 	
 }
