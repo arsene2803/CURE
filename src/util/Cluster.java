@@ -5,8 +5,8 @@ import java.util.List;
 
 public class Cluster implements Comparator<Cluster> {
 	
-	Cluster closest;
-	double mean;
+	Cluster closest=null;
+	Point mean;
 	double min_distance;
 
 	List<Point> rep=null;
@@ -22,11 +22,25 @@ public class Cluster implements Comparator<Cluster> {
 	public void setClosest(Cluster closest) {
 		this.closest = closest;
 	}
-	public double getMean() {
+	public Point getMean() {
 		return mean;
 	}
-	public void setMean(double mean) {
-		this.mean = mean;
+	public void setMean() {
+		if(mean==null)
+			mean=new Point();
+		
+		double sum_x=0,sum_y=0;
+		
+		if(rep.size()>1) {
+			for(int i=0;i<rep.size();i++) {
+				sum_x+=rep.get(i).getX();
+				sum_y+=rep.get(i).getY();
+			}
+		}
+		mean.setX(sum_x/rep.size());
+		mean.setY(sum_y/rep.size());
+		
+		
 	}
 	public List<Point> getRep() {
 		return rep;

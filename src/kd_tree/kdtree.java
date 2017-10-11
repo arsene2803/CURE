@@ -74,8 +74,18 @@ public class kdtree {
 		}
 		
 		void update(Node node) {
+			
 			double dx=node.pnt.getX()-pnt_in.getX();
 			double dy=node.pnt.getY()-pnt_in.getY();
+			//checking if its the same point
+			if((dx==0 && dy==0))
+				return ;
+			//checking whether it belongs to same cluster
+			if(node.pnt.getC()!=null && pnt_in.getC()!=null)
+			{
+				if((node.pnt.getC()==pnt_in.getC()))
+					return;
+			}
 			double cur_dist=Math.sqrt(dx*dx+dy*dy);
 			if(cur_dist<min_dist) {
 				pnt_nn=node.pnt;
@@ -97,12 +107,13 @@ public class kdtree {
 			nn.update(node);
 		}
 		else {
+			
 			double dist_hp=planedistnace(node,nn.pnt_in);
 			//check the half space
 			getNN(nn,(dist_hp<0)?node.L:node.R);
 			//checking the other half
 			if(dist_hp<nn.min_dist)
-				getNN(nn,(dist_hp<0)?node.L:node.R);
+				getNN(nn,(dist_hp<0)?node.R:node.L);
 			
 		}
 		
@@ -110,6 +121,7 @@ public class kdtree {
 
 	private double planedistnace(Node node, Point pnt_in) {
 		// TODO Auto-generated method stub
+
 		if((node.depth&1)==0)
 			return pnt_in.getX()-node.pnt.getX();
 		else
