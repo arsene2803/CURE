@@ -2,6 +2,7 @@ package Reducer;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.StringTokenizer;
@@ -57,10 +58,8 @@ public class Curereducer extends Reducer<LongWritable, Text, LongWritable, Text>
 			}
 			//setting the closest and min_distance and the mean
 			cl.get(i).setClosest(cl.get(min_cluster_index));
-			cl.get(i).setMin_distance(min_distance);
 			cl.get(i).setMean();
 			cl.get(min_cluster_index).setClosest(cl.get(i));
-			cl.get(min_cluster_index).setMin_distance(min_distance);
 			cl.get(min_cluster_index).setMean();
 			
 		}
@@ -68,19 +67,45 @@ public class Curereducer extends Reducer<LongWritable, Text, LongWritable, Text>
 		//setting the heap
 		PriorityQueue<Cluster> Q=new PriorityQueue<>(cl);
 		//getting the list of points
-		List<Point> pl=new ArrayList<>();
-		for(int i=0;i<cl.size();i++) {
-			setClusterPoint(cl.get(i));
-			pl.addAll(cl.get(i).getRep());
-		}
+		List<Point> pl =getPoints(cl);
 		//setting the kd tree
 		kdtree T=new kdtree(pl);
+		//set the cluster of each point
+		for(int i=0;i<cl.size();i++) {
+			setClusterPoint(cl.get(i));
+		}
+		
 		while(Q.size()<k) {
 			Cluster u=Q.poll();
 			Cluster v=u.getClosest();
 			//delete v from priority queue
 			Q.remove(v);
 			Cluster w=merge(u,v,c,alpha);
+			//rebuild the kdtree,need to figure out how to delete again 
+			cl=getClusters(Q);
+			pl=getPoints(cl);
+			T=new kdtree(pl);
+			w.setClosest(Q.peek());
+			Iterator<Cluster> it=Q.iterator();
+			while(it.hasNext()) {
+				Cluster x=it.next();
+				if(getdistCluster(w,x)<getdistCluster(w,w.getClosest()))
+						w.setClosest(x);
+				if(x.getClosest()==u || x.getClosest()==v) {
+					if(getdistCluster(x, x.getClosest())<getdistCluster(w, x)) 
+						x.setClosest(getClosestCluster(T,x,getdistCluster(w, x)));
+					else
+						x.setClosest(w);
+				//relocate x
+					relocate(Q,x);			
+				}
+				else if(getdistCluster(x, x.getClosest())>getdistCluster(w,x))
+				{
+					x.setClosest(w);
+					relocate(Q,x);
+				}	
+			}
+			Q.add(w);	
 		}
 		
 		
@@ -90,6 +115,48 @@ public class Curereducer extends Reducer<LongWritable, Text, LongWritable, Text>
 		
 	}
 	
+	private void relocate(PriorityQueue<Cluster> q, Cluster x) {
+		// TODO Auto-generated method stub
+		q.remove(x);
+		q.add(x);
+		
+	}
+
+	private Cluster getClosestCluster(kdtree t, Cluster x, double d) {
+		// TODO Auto-generated method stub
+		double min_dist=Double.MAX_VALUE;
+		Cluster closest=null;
+		List<Point> pl=x.getRep();
+		for(int i=0;i<pl.size();i++) {
+			t.getNN(pl.get(i), d);
+			double dist=getdist(t.getNn().getPnt_nn(),pl.get(i));
+			if(dist<min_dist) {
+				min_dist=dist;
+				closest=t.getNn().getPnt_nn().getC();
+				
+			}
+				
+		}
+		return closest;
+	}
+
+	private double getdistCluster(Cluster w, Cluster x) {
+		// TODO Auto-generated method stub
+		double minDist=Double.MAX_VALUE;
+		List<Point> set1=w.getRep();
+		List<Point> set2=x.getRep();
+		for(int i=0;i<set1.size();i++) {
+			for(int j=0;j<set2.size();j++) {
+				double dist=getdist(set1.get(i),set2.get(j));
+				if(minDist>dist)
+					minDist=dist;
+			}
+		}
+		
+		
+		return minDist;
+	}
+
 	private Cluster merge(Cluster u, Cluster v,int c,double alpha) {
 		// TODO Auto-generated method stub
 		List<Point> pl=new ArrayList();
@@ -97,6 +164,7 @@ public class Curereducer extends Reducer<LongWritable, Text, LongWritable, Text>
 		pl.addAll(u.getRep());
 		pl.addAll(v.getRep());
 		Cluster w=new Cluster(null, pl, 0);
+		//setting the mean
 		w.setMean();
 		//getting the scattered points
 		if(pl.size()>c) {
@@ -110,11 +178,14 @@ public class Curereducer extends Reducer<LongWritable, Text, LongWritable, Text>
 						minDist=getdist(w.getMean(),pl.get(j),alpha);
 					}
 					else {
-						minDist=Double.MAX_VALUE;
+						minDist=0;
 						for(int k=0;k<temp.size();k++) {
-							double dist=getdist(temp.get(k),pl.get(j),alpha);
-							if(dist<minDist)
-								minDist=dist;
+							if(!temp.contains(pl.get(j))) {
+								double dist=getdist(temp.get(k),pl.get(j),alpha);
+								if(dist<minDist)
+									minDist=dist;
+							}
+							
 						}
 					}
 					if(minDist>=maxDist) {
@@ -135,7 +206,9 @@ public class Curereducer extends Reducer<LongWritable, Text, LongWritable, Text>
 			p.setX(p.getX()+alpha*(w.getMean().getX()-p.getX()));
 			p.setY(p.getY()+alpha*(w.getMean().getY()-p.getY()));
 		}
+		w.setRep(temp);
 		w.setMean();
+		setClusterPoint(w);
 		return w;
 		
 		
@@ -149,6 +222,12 @@ public class Curereducer extends Reducer<LongWritable, Text, LongWritable, Text>
 		double dy=mean.getY()-sy;
 		return Math.sqrt(dx*dx+dy*dy);
 	}
+	
+	private double getdist(Point p1, Point p2) {
+		double dx=p1.getX()-p2.getX();
+		double dy=p1.getY()-p2.getY();
+		return Math.sqrt(dx*dx+dy*dy);
+	}
 
 	public void setClusterPoint(Cluster c) {
 		if(c.getRep()!=null) {
@@ -159,6 +238,22 @@ public class Curereducer extends Reducer<LongWritable, Text, LongWritable, Text>
 		}
 		
 	}
+	public List<Cluster> getClusters(PriorityQueue<Cluster> Q){
+		List<Cluster> cl=new ArrayList<>();
+		Iterator<Cluster> it=Q.iterator();
+		while(it.hasNext()) {
+			cl.add(it.next());
+		}
+		return cl;
+	}
 	
+	public List<Point> getPoints(List<Cluster> cl){
+		List<Point> pl=new ArrayList<>();
+		for(int i=0;i<cl.size();i++) {
+			pl.addAll(cl.get(i).getRep());
+		}
+		return pl;
+		
+	}
 
 }

@@ -21,6 +21,7 @@ public class Cluster implements Comparator<Cluster> {
 	}
 	public void setClosest(Cluster closest) {
 		this.closest = closest;
+		this.min_distance=getdistCluster(this, this.closest);
 	}
 	public Point getMean() {
 		return mean;
@@ -48,8 +49,29 @@ public class Cluster implements Comparator<Cluster> {
 	public void setRep(List<Point> rep) {
 		this.rep = rep;
 	}
-	
+	private double getdist(Point p1, Point p2) {
+		double dx=p1.getX()-p2.getX();
+		double dy=p1.getY()-p2.getY();
+		return Math.sqrt(dx*dx+dy*dy);
+	}
+	private double getdistCluster(Cluster w, Cluster x) {
+		// TODO Auto-generated method stub
+		double minDist=Double.MAX_VALUE;
+		List<Point> set1=w.getRep();
+		List<Point> set2=x.getRep();
+		for(int i=0;i<set1.size();i++) {
+			for(int j=0;j<set2.size();j++) {
+				double dist=getdist(set1.get(i),set2.get(j));
+				if(minDist>dist)
+					minDist=dist;
+			}
+		}
+		
+		
+		return minDist;
+	}
 	public double getMin_distance() {
+		
 		return min_distance;
 	}
 	public void setMin_distance(double min_distance) {

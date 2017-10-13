@@ -9,10 +9,13 @@ import util.Point;
 public class kdtree {
 	int max_depth=0;
 	Node root;
+	NN nn;
+	
 	
 	public kdtree(List<Point> points) {
 		max_depth= (int)Math.ceil(Math.log(points.size())/Math.log(2));
 		build(root=new Node(0),points);
+		nn=new NN(null);
 	}
 	
 	private void build(Node node, List<Point> points) {
@@ -59,6 +62,10 @@ public class kdtree {
 		
 	}
 	public static class NN{
+		public Point getPnt_nn() {
+			return pnt_nn;
+		}
+
 		Point pnt_in;
 		Point pnt_nn=null;
 		double min_dist=Double.MAX_VALUE;
@@ -78,7 +85,7 @@ public class kdtree {
 			double dx=node.pnt.getX()-pnt_in.getX();
 			double dy=node.pnt.getY()-pnt_in.getY();
 			//checking if its the same point
-			if((dx==0 && dy==0))
+			if((dx==0 && dy==0)||(pnt_in.getC()==node.pnt.getC() && (pnt_in.getC()!=null && (node.pnt.getC()!=null))))
 				return ;
 			//checking whether it belongs to same cluster
 			if(node.pnt.getC()!=null && pnt_in.getC()!=null)
@@ -96,10 +103,16 @@ public class kdtree {
 	}
 	
 	public NN getNN(Point point,double min_dist) {
-		NN nn=new NN(point,min_dist);
+		nn.min_dist=min_dist;
+		nn.pnt_in=point;
 		getNN(nn,root);
 		return nn;
 	}
+
+	public NN getNn() {
+		return nn;
+	}
+
 
 	private void getNN(NN nn, Node node) {
 		// TODO Auto-generated method stub
