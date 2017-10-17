@@ -43,9 +43,13 @@ public class CureDriver {
 	    job.setInputFormatClass(util.SamplingInputFormat.class);
 	    FileInputFormat.addInputPath(job, new Path(args[0]));
 	    FileOutputFormat.setOutputPath(job, new Path(args[1]));
-	    System.exit(job.waitForCompletion(true) ? 0 : 1);
-	   
-	    aggregateFirstPass(args, conf);
+	    //System.exit(job.waitForCompletion(true) ? 0 : 1);
+	    if(!job.waitForCompletion(true)) {
+	    	aggregateFirstPass(args, conf);
+	    }
+	    //create a new job
+	    
+	    
 	    
 	    
 	}
