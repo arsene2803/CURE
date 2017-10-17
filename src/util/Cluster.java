@@ -32,7 +32,7 @@ public class Cluster implements Comparator<Cluster> {
 		
 		double sum_x=0,sum_y=0;
 		
-		if(rep.size()>1) {
+		if(rep.size()>=1) {
 			for(int i=0;i<rep.size();i++) {
 				sum_x+=rep.get(i).getX();
 				sum_y+=rep.get(i).getY();

@@ -2,6 +2,7 @@ package Reducer;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -30,7 +31,7 @@ public class Curereducer extends Reducer<LongWritable, Text, LongWritable, Text>
 			String line=val.toString();
 			StringTokenizer st=new StringTokenizer(line);
 			while(st.hasMoreTokens()) {
-				coord[i++]=Double.parseDouble(st.nextToken());
+				coord[i++]=Double.parseDouble(st.nextToken(","));
 			}
 			//create individual clusters
 			List<Point> temp=new ArrayList<>();
@@ -59,13 +60,26 @@ public class Curereducer extends Reducer<LongWritable, Text, LongWritable, Text>
 			//setting the closest and min_distance and the mean
 			cl.get(i).setClosest(cl.get(min_cluster_index));
 			cl.get(i).setMean();
-			cl.get(min_cluster_index).setClosest(cl.get(i));
-			cl.get(min_cluster_index).setMean();
+			
 			
 		}
 		
 		//setting the heap
-		PriorityQueue<Cluster> Q=new PriorityQueue<>(cl);
+		PriorityQueue<Cluster> Q=new PriorityQueue<Cluster>(new Comparator<Cluster>() {
+
+			@Override
+			public int compare(Cluster o1, Cluster o2) {
+				// TODO Auto-generated method stub
+				if(o1.getMin_distance()>o1.getMin_distance()) {
+					return 1;
+				}
+				else if(o1.getMin_distance()<o1.getMin_distance()) {
+					return -1;
+				}
+				else
+					return 0;
+			}
+		});
 		//getting the list of points
 		List<Point> pl =getPoints(cl);
 		//setting the kd tree
@@ -73,9 +87,10 @@ public class Curereducer extends Reducer<LongWritable, Text, LongWritable, Text>
 		//set the cluster of each point
 		for(int i=0;i<cl.size();i++) {
 			setClusterPoint(cl.get(i));
+			Q.add(cl.get(i));
 		}
 		
-		while(Q.size()<k) {
+		while(Q.size()>k) {
 			Cluster u=Q.poll();
 			Cluster v=u.getClosest();
 			//delete v from priority queue
@@ -175,13 +190,13 @@ public class Curereducer extends Reducer<LongWritable, Text, LongWritable, Text>
 				for(int j=0;j<pl.size();j++) {
 					double minDist=0;
 					if(i==0) {
-						minDist=getdist(w.getMean(),pl.get(j),alpha);
+						minDist=getdistScatter(w.getMean(),pl.get(j),alpha);
 					}
 					else {
 						minDist=0;
 						for(int k=0;k<temp.size();k++) {
 							if(!temp.contains(pl.get(j))) {
-								double dist=getdist(temp.get(k),pl.get(j),alpha);
+								double dist=getdistScatter(temp.get(k),pl.get(j),alpha);
 								if(dist<minDist)
 									minDist=dist;
 							}
@@ -214,14 +229,15 @@ public class Curereducer extends Reducer<LongWritable, Text, LongWritable, Text>
 		
 	}
 
-	private double getdist(Point mean, Point point,double alpha) {
+	private double getdistScatter(Point mean, Point point, double alpha) {
 		// TODO Auto-generated method stub
-		double sx=point.getX()-alpha*(point.getC().getMean().getX()-point.getX());
-		double sy=point.getY()-alpha*(point.getC().getMean().getY()-point.getY());
+		double sx=(point.getX()-alpha*(point.getC().getMean().getX()))/(1-alpha);
+		double sy=(point.getY()-alpha*(point.getC().getMean().getY()))/(1-alpha);
 		double dx=mean.getX()-sx;
 		double dy=mean.getY()-sy;
 		return Math.sqrt(dx*dx+dy*dy);
 	}
+
 	
 	private double getdist(Point p1, Point p2) {
 		double dx=p1.getX()-p2.getX();
