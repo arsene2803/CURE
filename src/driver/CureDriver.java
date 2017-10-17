@@ -1,26 +1,32 @@
 package driver;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.SequenceFile.Reader;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
 
 
 public class CureDriver {
 	public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
 		
 		//Checking for the number of arguments
-		if(args.length != 3) {
-			throw new IllegalArgumentException("Arguments expected- input output Number_Of_partitions");
+		if(args.length != 6) {
+			throw new IllegalArgumentException("Arguments expected- input output Number_Of_partitions initial_output_name final_output_folder final_output_file ");
 		}
 		
 		//creating configuration object
@@ -38,8 +44,32 @@ public class CureDriver {
 	    FileInputFormat.addInputPath(job, new Path(args[0]));
 	    FileOutputFormat.setOutputPath(job, new Path(args[1]));
 	    System.exit(job.waitForCompletion(true) ? 0 : 1);
-		
-		
+	   
+	    aggregateFirstPass(args, conf);
+	    
+	    
 	}
 
+	public static void aggregateFirstPass(String[] args, Configuration conf) throws IOException, FileNotFoundException {
+		//aggregating all the clusters
+	    FileSystem fs=FileSystem.get(conf);
+	    FileStatus[] fss = fs.listStatus(new Path("/"));
+	    //making final output mkdir
+	    Path final_dir=new Path(args[4]);
+	    fs.mkdirs(final_dir);
+	    Path first_pass_res=new Path(final_dir+"/"+args[5]);
+	    SequenceFile.Writer writer = SequenceFile.createWriter(conf,
+                SequenceFile.Writer.file(first_pass_res), SequenceFile.Writer.keyClass(Text.class),SequenceFile.Writer.valueClass(Text.class));
+	    for (FileStatus status : fss) {
+	        Path path = status.getPath();
+	        SequenceFile.Reader reader = new SequenceFile.Reader(conf,Reader.file(path));
+	        Text key = new Text();
+	        Text value = new Text();
+	        while (reader.next(key, value)) {
+	            writer.append(key.toString(), value.toString());
+	        }	
+	    }
+	    writer.close();
+	}
+	
 }
