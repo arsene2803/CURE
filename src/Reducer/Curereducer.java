@@ -19,7 +19,7 @@ import util.Cluster;
 import util.Point; 
 
 public class Curereducer extends Reducer<LongWritable, Text, LongWritable, Text> {
-	public void reduce(LongWritable key,Iterable<Text> values,OutputCollector<LongWritable, Text> output) throws IOException {
+	public void reduce(LongWritable key,Iterable<Text> values,OutputCollector<Text, Text> output,Context context) throws IOException {
 		//need to set the number of clusters k,the shrinking factor alpha and the number of scattered points
 		int k=5,c=56;
 		double alpha=0.8;
@@ -122,12 +122,17 @@ public class Curereducer extends Reducer<LongWritable, Text, LongWritable, Text>
 			}
 			Q.add(w);	
 		}
+		cl=getClusters(Q);
+		int counter=1;
+		for(int i=0;i<cl.size();i++) {
+			List<Point> rl=cl.get(i).getRep();
+			for(int j=0;j<rl.size();j++) {
+				output.collect(new Text(context.getTaskAttemptID().getTaskID().getId()+"_"+counter), new Text(rl.get(j).toString()));
+			}
+			
+		}
 		
-		
-		
-		
-		
-		
+	
 	}
 	
 	private void relocate(PriorityQueue<Cluster> q, Cluster x) {

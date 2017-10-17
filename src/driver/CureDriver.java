@@ -30,7 +30,7 @@ public class CureDriver {
 	    job.setMapperClass(mapper.PointsMapper.class);
 	    job.setCombinerClass(Reducer.Curereducer.class);
 	    job.setReducerClass(Reducer.Curereducer.class);
-	    job.setOutputKeyClass(LongWritable.class);
+	    job.setOutputKeyClass(Text.class);
 	    job.setOutputValueClass(Text.class);
 	    job.setNumReduceTasks(Integer.parseInt(args[2]));
 	    //setting the format
