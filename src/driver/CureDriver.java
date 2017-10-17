@@ -31,7 +31,8 @@ public class CureDriver {
 		
 		//creating configuration object
 		Configuration conf=new Configuration();
-		Job job=Job.getInstance(conf,"CUREJOB");
+		conf.set("numPart",args[2]);
+		Job job=Job.getInstance(conf,"FIRST_PASS_CUREJOB");
 		job.setJarByClass(CureDriver.class);
 	    job.setMapperClass(mapper.PointsMapper.class);
 	    job.setCombinerClass(Reducer.Curereducer.class);
@@ -48,6 +49,10 @@ public class CureDriver {
 	    	aggregateFirstPass(args, conf);
 	    }
 	    //create a new job
+	    conf=new Configuration();
+	    job=Job.getInstance(conf,"SECOND_PASS_CUREJOB");
+	    
+	    
 	    
 	    
 	    

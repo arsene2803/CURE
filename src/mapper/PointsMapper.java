@@ -8,8 +8,17 @@ import org.apache.hadoop.mapreduce.Mapper;
 
 public class PointsMapper extends Mapper<LongWritable, Text, LongWritable, Text> {
 	LongWritable newKey=new LongWritable(1);
+	private String numPart;
+	
+	@Override
+	protected void setup(Mapper.Context context) throws IOException,InterruptedException{
+		
+		numPart=context.getConfiguration().get("numPart");
+		
+	}
 	public void map(LongWritable key, Text value,Context context) throws IOException, InterruptedException {
-		context.write(newKey, value);
+		int number_part=Integer.parseInt(numPart);
+		context.write(new LongWritable(key.get()%number_part), value);
 	}
 	
 
