@@ -17,6 +17,9 @@ import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+import partitioning.keyPartitioner;
+
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 
@@ -25,8 +28,10 @@ public class CureDriver {
 	public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
 		
 		//Checking for the number of arguments
-		if(args.length != 6) {
-			throw new IllegalArgumentException("Arguments expected- input output Number_Of_partitions initial_output_name final_output_folder final_output_file ");
+		if(args.length != 5) {
+			System.out.println(args.length);
+			throw new IllegalArgumentException("Arguments expected- input output Number_Of_partitions first_pass_dir first_pass_file_name"
+					);
 		}
 		
 		//creating configuration object
@@ -35,27 +40,24 @@ public class CureDriver {
 		Job job=Job.getInstance(conf,"FIRST_PASS_CUREJOB");
 		job.setJarByClass(CureDriver.class);
 	    job.setMapperClass(mapper.PointsMapper.class);
-	    job.setCombinerClass(Reducer.Curereducer.class);
 	    job.setReducerClass(Reducer.Curereducer.class);
+	    job.setMapOutputKeyClass(LongWritable.class);
+	    job.setMapOutputValueClass(Text.class);
 	    job.setOutputKeyClass(Text.class);
 	    job.setOutputValueClass(Text.class);
+	    job.setPartitionerClass(keyPartitioner.class);
 	    job.setNumReduceTasks(Integer.parseInt(args[2]));
 	    //setting the format
 	    job.setInputFormatClass(util.SamplingInputFormat.class);
 	    FileInputFormat.addInputPath(job, new Path(args[0]));
 	    FileOutputFormat.setOutputPath(job, new Path(args[1]));
-	    //System.exit(job.waitForCompletion(true) ? 0 : 1);
-	    if(!job.waitForCompletion(true)) {
+	    System.exit(job.waitForCompletion(true) ? 0 : 1);
+	    /*if(!job.waitForCompletion(true)) {
 	    	aggregateFirstPass(args, conf);
 	    }
 	    //create a new job
 	    conf=new Configuration();
-	    job=Job.getInstance(conf,"SECOND_PASS_CUREJOB");
-	    
-	    
-	    
-	    
-	    
+	    job=Job.getInstance(conf,"SECOND_PASS_CUREJOB");*/
 	    
 	}
 
@@ -64,9 +66,9 @@ public class CureDriver {
 	    FileSystem fs=FileSystem.get(conf);
 	    FileStatus[] fss = fs.listStatus(new Path("/"));
 	    //making final output mkdir
-	    Path final_dir=new Path(args[4]);
+	    Path final_dir=new Path("/"+args[3]);
 	    fs.mkdirs(final_dir);
-	    Path first_pass_res=new Path(final_dir+"/"+args[5]);
+	    Path first_pass_res=new Path(final_dir+"/"+args[4]);
 	    SequenceFile.Writer writer = SequenceFile.createWriter(conf,
                 SequenceFile.Writer.file(first_pass_res), SequenceFile.Writer.keyClass(Text.class),SequenceFile.Writer.valueClass(Text.class));
 	    for (FileStatus status : fss) {

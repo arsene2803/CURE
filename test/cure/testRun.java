@@ -1,5 +1,8 @@
 package cure;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -9,13 +12,15 @@ import java.util.StringTokenizer;
 
 import org.apache.hadoop.io.Text;
 
+import com.opencsv.CSVReader;
+
 import kd_tree.kdtree;
 import util.Cluster;
 import util.Point;
 
 public class testRun {
 	public static void run(List<String> values) {
-		int k=2,c=56;
+		int k=3,c=100;
 		double alpha=0.8;
 		//each point will be individual cluster
 		List<Cluster> cl=new ArrayList<>();
@@ -32,7 +37,7 @@ public class testRun {
 			temp.add(new Point(coord[0], coord[1]));
 			cl.add(new Cluster(null,temp,0));
 		}
-		
+		System.out.println("Computing closest cluster");
 		//compute the closest cluster for individual clusters
 		for(int i=0;i<cl.size();i++) {
 			double min_distance=Double.MAX_VALUE;
@@ -56,31 +61,20 @@ public class testRun {
 			cl.get(i).setMean();
 			
 		}
-		//checking out the values
-		for(int i=0;i<cl.size();i++) {
-			System.out.println("X: "+cl.get(i).getRep().get(0).getX());
-			System.out.println("Y: "+cl.get(i).getRep().get(0).getY());
-			System.out.println("closest: X"+cl.get(i).getClosest().getRep().get(0).getX());
-			System.out.println("closest: Y"+cl.get(i).getClosest().getRep().get(0).getY());
-			System.out.println("Minimal distance: "+cl.get(i).getMin_distance());
-			
-		}
+		System.out.println("done Computing closest cluster");
+	
 		//setting the heap
 		PriorityQueue<Cluster> Q=new PriorityQueue<Cluster>(new Comparator<Cluster>() {
 
 			@Override
 			public int compare(Cluster o1, Cluster o2) {
-				// TODO Auto-generated method stub
-				if(o1.getMin_distance()>o1.getMin_distance()) {
-					return 1;
-				}
-				else if(o1.getMin_distance()<o1.getMin_distance()) {
-					return -1;
-				}
-				else
-					return 0;
+		
+					// TODO Auto-generated method stub
+					return Double.compare(o1.getMin_distance(), o2.getMin_distance());
 			}
+
 		});
+		
 		//getting the list of points
 		List<Point> pl =getPoints(cl);
 		//setting the kd tree
@@ -100,35 +94,53 @@ public class testRun {
 			Cluster w=merge(u,v,c,alpha);
 			//rebuild the kdtree,need to figure out how to delete again 
 			cl=getClusters(Q);
+			//add the merged cluster 
+			cl.add(w);
 			pl=getPoints(cl);
 			T=new kdtree(pl);
 			w.setClosest(Q.peek());
 			Iterator<Cluster> it=Q.iterator();
+			List<Cluster> mod_cl=new ArrayList<>();
 			while(it.hasNext()) {
 				Cluster x=it.next();
+				if(Q.size()==1) {
+					w.setClosest(x);
+					x.setClosest(w);
+					relocate(it, mod_cl, x);
+					break;	
+				}
 				if(getdistCluster(w,x)<getdistCluster(w,w.getClosest()))
 						w.setClosest(x);
 				if(x.getClosest()==u || x.getClosest()==v) {
-					if(getdistCluster(x, x.getClosest())<getdistCluster(w, x)) 
-						x.setClosest(getClosestCluster(T,x,getdistCluster(w, x)));
+					
+					if(getdistCluster(x, x.getClosest())<getdistCluster(w, x)) {
+						x.setClosest(getClosestCluster(T,x,Double.MAX_VALUE));
+					}
+						
 					else
 						x.setClosest(w);
-				//relocate x
-					relocate(Q,x);			
+				relocate(it, mod_cl, x);			
 				}
 				else if(getdistCluster(x, x.getClosest())>getdistCluster(w,x))
 				{
 					x.setClosest(w);
-					relocate(Q,x);
+					relocate(it, mod_cl, x);
 				}	
+			}
+			for(int m=0;m<mod_cl.size();m++) {
+				Q.add(mod_cl.get(m));
 			}
 			Q.add(w);	
 			
 		}
 		cl=getClusters(Q);
-		System.out.println("Done clustering");
 		
 		
+	}
+
+	public static void relocate(Iterator<Cluster> it, List<Cluster> mod_cl, Cluster x) {
+		mod_cl.add(x);
+		it.remove();
 	}
 	
 	private static void relocate(PriorityQueue<Cluster> q, Cluster x) {
@@ -146,7 +158,7 @@ public class testRun {
 		for(int i=0;i<pl.size();i++) {
 			t.getNN(pl.get(i), d);
 			double dist=getdist(t.getNn().getPnt_nn(),pl.get(i));
-			if(dist<min_dist) {
+			if(dist<=min_dist) {
 				min_dist=dist;
 				closest=t.getNn().getPnt_nn().getC();
 				
@@ -214,7 +226,9 @@ public class testRun {
 						minDist=getdistScatter(w.getMean(),pl.get(j),alpha);
 					}
 					else {
-						minDist=0;
+						minDist=Double.MAX_VALUE;
+						if(temp.contains(pl.get(j)))
+							continue;
 						for(int k=0;k<temp.size();k++) {
 							if(!temp.contains(pl.get(j))) {
 								double dist=getdistScatter(temp.get(k),pl.get(j),alpha);
@@ -268,10 +282,29 @@ public class testRun {
 	
 	public static void main(String[] args) {
 		List<String> input=new ArrayList<>();
-		input.add("1,2");
-		input.add("3,4");
-		input.add("100,3");
+		//read from csv file
+		List<String[]> inp=readCSV("input.csv");
+		for(int i=0;i<inp.size();i++) {
+			input.add(inp.get(i)[0]+","+inp.get(i)[1]);
+		}
 		run(input);
+	}
+	public static List<String[]> readCSV(String fileName){
+		try {
+			CSVReader reader=new CSVReader(new FileReader(fileName),',');
+			List<String[]> values=reader.readAll();
+			reader.close();
+			return values;
+			
+			
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 }

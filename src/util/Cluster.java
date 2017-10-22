@@ -3,7 +3,7 @@ package util;
 import java.util.Comparator;
 import java.util.List;
 
-public class Cluster implements Comparator<Cluster> {
+public class Cluster  {
 	
 	Cluster closest=null;
 	Point mean;
@@ -77,18 +77,5 @@ public class Cluster implements Comparator<Cluster> {
 	public void setMin_distance(double min_distance) {
 		this.min_distance = min_distance;
 	}
-	@Override
-	public int compare(Cluster o1, Cluster o2) {
-		// TODO Auto-generated method stub
-		if(o1.getMin_distance()>o1.getMin_distance()) {
-			return 1;
-		}
-		else if(o1.getMin_distance()<o1.getMin_distance()) {
-			return -1;
-		}
-		else
-			return 0;
-	}
-	
 
 }

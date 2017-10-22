@@ -125,7 +125,7 @@ public class kdtree {
 			//check the half space
 			getNN(nn,(dist_hp<0)?node.L:node.R);
 			//checking the other half
-			if(dist_hp<nn.min_dist)
+			if(Math.abs(dist_hp)<nn.min_dist)
 				getNN(nn,(dist_hp<0)?node.R:node.L);
 			
 		}

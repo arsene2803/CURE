@@ -7,7 +7,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
 public class PointsMapper extends Mapper<LongWritable, Text, LongWritable, Text> {
-	LongWritable newKey=new LongWritable(1);
+
 	private String numPart;
 	
 	@Override
