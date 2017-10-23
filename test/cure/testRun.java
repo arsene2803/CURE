@@ -38,7 +38,7 @@ public class testRun {
 			cl.add(new Cluster(null,temp,0));
 		}
 		System.out.println("Computing closest cluster");
-		//compute the closest cluster for individual clusters
+/*		//compute the closest cluster for individual clusters
 		for(int i=0;i<cl.size();i++) {
 			double min_distance=Double.MAX_VALUE;
 			int min_cluster_index=i;
@@ -60,7 +60,25 @@ public class testRun {
 			cl.get(i).setClosest(cl.get(min_cluster_index));
 			cl.get(i).setMean();
 			
-		}
+		}*/
+		
+		//getting the list of points
+				List<Point> pl =getPoints(cl);
+				//setting the kd tree
+				kdtree T=new kdtree(pl);
+				//setting cluster for each poin
+				for(int i=0;i<cl.size();i++) {
+					setClusterPoint(cl.get(i));
+				}
+				//compute the closest cluster
+				for(int i=0;i<pl.size();i++) {
+					T.getNN(pl.get(i), Double.MAX_VALUE);
+					cl.get(i).setClosest(T.getNn().getPnt_nn().getC());
+					cl.get(i).setMean();
+				}
+		
+
+		
 		System.out.println("done Computing closest cluster");
 	
 		//setting the heap
@@ -75,10 +93,6 @@ public class testRun {
 
 		});
 		
-		//getting the list of points
-		List<Point> pl =getPoints(cl);
-		//setting the kd tree
-		kdtree T=new kdtree(pl);
 		//set the cluster of each point
 		for(int i=0;i<cl.size();i++) {
 			setClusterPoint(cl.get(i));

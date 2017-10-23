@@ -39,7 +39,7 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 			cl.add(new Cluster(null,temp,0));
 		}
 		
-		//compute the closest cluster for individual clusters
+/*		//compute the closest cluster for individual clusters
 		for(int i=0;i<cl.size();i++) {
 			double min_distance=Double.MAX_VALUE;
 			int min_cluster_index=i;
@@ -62,6 +62,20 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 			cl.get(i).setMean();
 			
 			
+		}*/
+		//getting the list of points
+		List<Point> pl =getPoints(cl);
+		//setting the kd tree
+		kdtree T=new kdtree(pl);
+		//setting cluster for each poin
+		for(int i=0;i<cl.size();i++) {
+			setClusterPoint(cl.get(i));
+		}
+		//compute the closest cluster
+		for(int i=0;i<pl.size();i++) {
+			T.getNN(pl.get(i), Double.MAX_VALUE);
+			cl.get(i).setClosest(T.getNn().getPnt_nn().getC());
+			cl.get(i).setMean();
 		}
 		
 		//setting the heap
@@ -74,10 +88,6 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 					return Double.compare(o1.getMin_distance(), o2.getMin_distance());
 			}
 		});
-		//getting the list of points
-		List<Point> pl =getPoints(cl);
-		//setting the kd tree
-		kdtree T=new kdtree(pl);
 		//set the cluster of each point
 		System.out.println("Starting to compute CURE");
 		computeCluster(k, c, alpha, cl, Q);
@@ -100,7 +110,6 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 		List<Point> pl;
 		kdtree T;
 		for(int i=0;i<cl.size();i++) {
-			setClusterPoint(cl.get(i));
 			Q.add(cl.get(i));
 		}
 		

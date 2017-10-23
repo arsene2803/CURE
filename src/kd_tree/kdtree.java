@@ -85,7 +85,7 @@ public class kdtree {
 			double dx=node.pnt.getX()-pnt_in.getX();
 			double dy=node.pnt.getY()-pnt_in.getY();
 			//checking if its the same point
-			if((dx==0 && dy==0)||(pnt_in.getC()==node.pnt.getC() && (pnt_in.getC()!=null && (node.pnt.getC()!=null))))
+			if((dx==0 && dy==0)||(pnt_in.getC()!=null && (node.pnt.getC()!=null)&&(pnt_in.getC()==node.pnt.getC())))
 				return ;
 			//checking whether it belongs to same cluster
 			if(node.pnt.getC()!=null && pnt_in.getC()!=null)
