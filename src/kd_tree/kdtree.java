@@ -20,6 +20,7 @@ public class kdtree {
 	
 	private void build(Node node, List<Point> points) {
 		// TODO Auto-generated method stub
+		
 		final int e=points.size();
 		final int m=e>>1;
 		if(e>1) {
@@ -29,17 +30,23 @@ public class kdtree {
 				Collections.sort(points,new SORT_X());
 			else
 				Collections.sort(points,new SORT_Y());
+			if(0<m)
 			build((node.L=new Node(++depth)),copy(points,0,m));
-			build((node.R=new Node(depth)),copy(points,m,e));
+			
+			if(m+1<e)
+			build((node.R=new Node(depth)),copy(points,m+1,e));
 			
 		}
 		node.pnt=points.get(m);
 		
 	}
 	
+	
+	
 	private List<Point> copy(List<Point> points, int start, int end) {
 		// TODO Auto-generated method stub
-		return points.subList(start, end);
+			return points.subList(start, end);
+		
 	}
 	
 	public static class SORT_X implements Comparator<Point>{
@@ -61,6 +68,134 @@ public class kdtree {
 		}
 		
 	}
+	//finds minimum for a node
+	public Node findMin(Node root,int d,int depth) {
+		if(root==null)
+			return null;
+		if((depth&1)==d) {
+			if(root.L==null)
+				return root;
+			else
+				return findMin(root.L,d,depth+1);
+		}
+		return minNode(root,findMin(root.L,d,depth+1),findMin(root.R,d,depth+1),d);
+		
+	}
+	//wrapper for find
+	public Node findMin(Node root,int d) {
+		return findMin(root,d,0);
+	}
+	
+	private Node minNode(Node x, Node y, Node z,int d) {
+		// TODO Auto-generated method stub
+		Node res=x;
+		double res_cord=(d==0)?res.pnt.getX():res.pnt.getY();
+		if(y!=null) {
+			Point py=y.pnt;
+			double py_cord=(d==0)?py.getX():py.getY();
+			res=(py_cord<res_cord)?y:res;
+			
+		}
+		if(z!=null) {
+			Point pz=z.pnt;
+			res_cord=(d==0)?res.pnt.getX():res.pnt.getY();
+			double pz_cord=(d==0)?pz.getX():pz.getY();
+			res=(pz_cord<res_cord)?z:res;
+		}
+		
+		return res;
+	}
+	
+	public Node delNode(Node root,Point p,int depth) {
+		//given point is not present 
+		if(root==null)
+			return null;
+		int d=depth&1;
+		//check if the points are same
+		if(root.pnt==p) {
+			//if right child is not null
+			if(root.R!=null) {
+				//find min in the right subtree
+				Node min=findMin(root.R, d,depth+1);
+				//copy the points
+				copyPoints(root,min);
+				root.R=delNode(root.R,min.pnt,depth+1);
+			}
+			else if(root.L!=null) {
+				//same as above
+				Node min=findMin(root.L, d,depth+1);
+				//copy the points
+				copyPoints(root,min);
+				root.R=delNode(root.L,min.pnt,depth+1);
+			}
+			else {
+				root=null;
+				return null;
+			}
+			
+		}
+		double p_coord=(d==0)?p.getX():p.getY();
+		double r_coord=(d==0)?root.pnt.getX():root.pnt.getY();
+		if(p_coord<r_coord)
+			root.L=delNode(root.L,p,depth+1);
+		else
+			root.R=delNode(root.R,p,depth+1);
+		return root;
+		
+	}
+	
+	public Node delNode(Node root,Point p) {
+		root=delNode(root,p,0);
+		return root ;
+		
+	}
+	
+	public Node delNode(List<Point> pl) {
+		for(int i=0;i<pl.size();i++) {
+			root=delNode(root,pl.get(i));
+		}
+		return root;
+		
+	}
+	public Node insertNode(Node root,Point p,int depth) {
+		
+		if(root==null) {
+			Node n= new Node(depth);
+			n.pnt=p;
+			return n;
+		}
+		
+		int d=depth&1;
+		//decide left or right subtree
+		double p_coord=(d==0)?p.getX():p.getY();
+		double r_coord=(d==0)?root.pnt.getX():root.pnt.getY();
+		if(p_coord<r_coord)
+			root.L=insertNode(root.L,p,depth+1);
+		else
+			root.R=insertNode(root.R,p,depth+1);
+		
+		return root;
+			
+	}
+	
+	public Node insertNode(Node root,Point p) {
+		return insertNode(root,p,0);
+	}
+	
+	public Node insertNode(List<Point> pl) {
+		for(int i=0;i<pl.size();i++) {
+			root=insertNode(root,pl.get(i));
+		}
+		return root;
+	}
+
+	private void copyPoints(Node root, Node min) {
+		// TODO Auto-generated method stub
+		root.pnt=min.pnt;
+		
+		
+	}
+
 	public static class NN{
 		public Point getPnt_nn() {
 			return pnt_nn;
@@ -116,19 +251,16 @@ public class kdtree {
 
 	private void getNN(NN nn, Node node) {
 		// TODO Auto-generated method stub
-		if(node.isLeaf()) {
+			if(node==null)
+				return;
 			nn.update(node);
-		}
-		else {
-			
 			double dist_hp=planedistnace(node,nn.pnt_in);
 			//check the half space
 			getNN(nn,(dist_hp<0)?node.L:node.R);
 			//checking the other half
 			if(Math.abs(dist_hp)<nn.min_dist)
 				getNN(nn,(dist_hp<0)?node.R:node.L);
-			
-		}
+
 		
 	}
 

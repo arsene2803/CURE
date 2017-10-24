@@ -107,11 +107,12 @@ public class testRun {
 			Q.remove(v);
 			Cluster w=merge(u,v,c,alpha);
 			//rebuild the kdtree,need to figure out how to delete again 
-			cl=getClusters(Q);
-			//add the merged cluster 
-			cl.add(w);
-			pl=getPoints(cl);
-			T=new kdtree(pl);
+			//delete u and v
+			T.delNode(u.getRep());
+			T.delNode(v.getRep());
+			//add the points from w
+			T.insertNode(w.getRep());
+			
 			w.setClosest(Q.peek());
 			Iterator<Cluster> it=Q.iterator();
 			List<Cluster> mod_cl=new ArrayList<>();
@@ -297,7 +298,7 @@ public class testRun {
 	public static void main(String[] args) {
 		List<String> input=new ArrayList<>();
 		//read from csv file
-		List<String[]> inp=readCSV("input.csv");
+		List<String[]> inp=readCSV("sample.csv");
 		for(int i=0;i<inp.size();i++) {
 			input.add(inp.get(i)[0]+","+inp.get(i)[1]);
 		}

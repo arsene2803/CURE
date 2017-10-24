@@ -88,9 +88,13 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 					return Double.compare(o1.getMin_distance(), o2.getMin_distance());
 			}
 		});
+		//adding to the priority queue
+		for(int h=0;h<cl.size();h++) {
+			Q.add(cl.get(h));
+		}
 		//set the cluster of each point
 		System.out.println("Starting to compute CURE");
-		computeCluster(k, c, alpha, cl, Q);
+		computeCluster(k, c, alpha, Q,T);
 		cl=getClusters(Q);
 		int counter=1;
 		int reducer_id=context.getTaskAttemptID().getTaskID().getId();
@@ -106,25 +110,20 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 	
 	}
 
-	public void computeCluster(int k, int c, double alpha, List<Cluster> cl, PriorityQueue<Cluster> Q) {
-		List<Point> pl;
-		kdtree T;
-		for(int i=0;i<cl.size();i++) {
-			Q.add(cl.get(i));
-		}
-		
+	public void computeCluster(int k, int c, double alpha, PriorityQueue<Cluster> Q,kdtree T) {
+
 		while(Q.size()>k) {
 			Cluster u=Q.poll();
 			Cluster v=u.getClosest();
 			//delete v from priority queue
 			Q.remove(v);
 			Cluster w=merge(u,v,c,alpha);
-			//rebuild the kdtree,need to figure out how to delete again 
-			cl=getClusters(Q);
-			//add the merged cluster 
-			cl.add(w);
-			pl=getPoints(cl);
-			T=new kdtree(pl);
+			//delete u and v
+			T.delNode(u.getRep());
+			T.delNode(v.getRep());
+			//add the points from w
+			T.insertNode(w.getRep());
+			
 			w.setClosest(Q.peek());
 			Iterator<Cluster> it=Q.iterator();
 			List<Cluster> mod_cl=new ArrayList<>();
