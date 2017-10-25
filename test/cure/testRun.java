@@ -129,7 +129,7 @@ public class testRun {
 				if(x.getClosest()==u || x.getClosest()==v) {
 					
 					if(getdistCluster(x, x.getClosest())<getdistCluster(w, x)) {
-						x.setClosest(getClosestCluster(T,x,Double.MAX_VALUE));
+						x.setClosest(getClosestCluster(T,x,getdistCluster(w, x)));
 					}
 						
 					else
@@ -298,7 +298,7 @@ public class testRun {
 	public static void main(String[] args) {
 		List<String> input=new ArrayList<>();
 		//read from csv file
-		List<String[]> inp=readCSV("sample.csv");
+		List<String[]> inp=readCSV("input.csv");
 		for(int i=0;i<inp.size();i++) {
 			input.add(inp.get(i)[0]+","+inp.get(i)[1]);
 		}

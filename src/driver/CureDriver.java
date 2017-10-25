@@ -13,11 +13,16 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.Reader;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobClient;
+import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.log4j.pattern.SequenceNumberPatternConverter;
 
+import Reducer.Curereducer;
 import partitioning.keyPartitioner;
 
 import org.apache.hadoop.fs.FileStatus;
@@ -37,12 +42,14 @@ public class CureDriver {
 		//creating configuration object
 		Configuration conf=new Configuration();
 		conf.set("numPart",args[2]);
+		conf.set("pass","1");
 		Job job=Job.getInstance(conf,"FIRST_PASS_CUREJOB");
 		job.setJarByClass(CureDriver.class);
 	    job.setMapperClass(mapper.PointsMapper.class);
-	    job.setReducerClass(Reducer.Curereducer.class);
+	    job.setReducerClass(Curereducer.class);
 	    job.setMapOutputKeyClass(LongWritable.class);
 	    job.setMapOutputValueClass(Text.class);
+	    job.setOutputFormatClass(org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat.class);
 	    job.setOutputKeyClass(Text.class);
 	    job.setOutputValueClass(Text.class);
 	    job.setPartitionerClass(keyPartitioner.class);
@@ -51,13 +58,29 @@ public class CureDriver {
 	    job.setInputFormatClass(util.SamplingInputFormat.class);
 	    FileInputFormat.addInputPath(job, new Path(args[0]));
 	    FileOutputFormat.setOutputPath(job, new Path(args[1]));
-	    System.exit(job.waitForCompletion(true) ? 0 : 1);
+	    //System.exit(job.waitForCompletion(true) ? 0 : 1);
+	    boolean success=job.waitForCompletion(true);
 	    /*if(!job.waitForCompletion(true)) {
 	    	aggregateFirstPass(args, conf);
 	    }
 	    //create a new job
 	    conf=new Configuration();
 	    job=Job.getInstance(conf,"SECOND_PASS_CUREJOB");*/
+	    if(success) {
+	    	conf.set("pass","2");
+	    	Job job2=Job.getInstance(conf,"SECOND_PASS_CUREJOB");
+	    	job2.setJarByClass(CureDriver.class);
+	    	job2.setMapperClass(mapper.ClusterMapper.class);
+	    	job2.setReducerClass(Curereducer.class);
+	    	job2.setMapOutputKeyClass(LongWritable.class);
+		    job2.setMapOutputValueClass(Text.class);
+		    job2.setInputFormatClass(SequenceFileInputFormat.class);
+		    job2.setOutputKeyClass(Text.class);
+		    job2.setOutputValueClass(Text.class);
+		    FileInputFormat.addInputPath(job2, new Path(args[1]));
+		    FileOutputFormat.setOutputPath(job2, new Path(args[3]));
+		    job2.waitForCompletion(true);
+	    }
 	    
 	}
 

@@ -3,8 +3,10 @@ package Reducer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.StringTokenizer;
 
@@ -19,25 +21,62 @@ import util.Cluster;
 import util.Point; 
 
 public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
+	private String pass;
+	
+	@Override
+	protected void setup(Reducer<LongWritable, Text, Text, Text>.Context context)
+			throws IOException, InterruptedException {
+		// TODO Auto-generated method stub
+		super.setup(context);
+		pass=context.getConfiguration().get("pass");
+	}
 	public void reduce(LongWritable key,Iterable<Text> values,Context context) throws IOException, InterruptedException {
 		//need to set the number of clusters k,the shrinking factor alpha and the number of scattered points
 		int k=10,c=56;
 		double alpha=0.8;
 		//each point will be individual cluster
 		List<Cluster> cl=new ArrayList<>();
-		for(Text val:values) {
-			int i=0;
-			double[] coord=new double[2]; 
-			String line=val.toString();
-			StringTokenizer st=new StringTokenizer(line,",");
-			while(st.hasMoreTokens()) {
-				coord[i++]=Double.parseDouble(st.nextToken().replace("\"", ""));
+		if(pass.equals("1")) {
+			for(Text val:values) {
+				int i=0;
+				double[] coord=new double[2]; 
+				String line=val.toString();
+				StringTokenizer st=new StringTokenizer(line,",");
+				while(st.hasMoreTokens()) {
+					coord[i++]=Double.parseDouble(st.nextToken().replace("\"", ""));
+				}
+				//create individual clusters
+				List<Point> temp=new ArrayList<>();
+				temp.add(new Point(coord[0], coord[1]));
+				cl.add(new Cluster(null,temp,0));
 			}
-			//create individual clusters
-			List<Point> temp=new ArrayList<>();
-			temp.add(new Point(coord[0], coord[1]));
-			cl.add(new Cluster(null,temp,0));
+		}else {
+			Map<String,List<Point>> hmap=new HashMap<>();
+			for(Text val: values) {
+				int i=0;
+				StringTokenizer st=new StringTokenizer(val.toString()," ");
+				String keyValue=st.nextToken();
+				String value=st.nextToken();
+				st=new StringTokenizer(value,",");
+				double[] coord=new double[2];
+				while(st.hasMoreTokens()) {
+					coord[i++]=Double.parseDouble(st.nextToken().replace("\"", ""));
+				}
+				if(hmap.containsKey(keyValue)) {
+					hmap.get(keyValue).add(new Point(coord[0], coord[1]));
+				}
+				else {
+					List<Point> temp=new ArrayList<>();
+					temp.add(new Point(coord[0], coord[1]));
+					hmap.put(keyValue, temp);
+				}
+			}
+			//iterate through hash map
+			for(List<Point> plist:hmap.values()) {
+				cl.add(new Cluster(null,plist,0));
+			}
 		}
+		
 		
 /*		//compute the closest cluster for individual clusters
 		for(int i=0;i<cl.size();i++) {
@@ -67,16 +106,37 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 		List<Point> pl =getPoints(cl);
 		//setting the kd tree
 		kdtree T=new kdtree(pl);
-		//setting cluster for each poin
+		//setting cluster and mean for each point
 		for(int i=0;i<cl.size();i++) {
 			setClusterPoint(cl.get(i));
-		}
-		//compute the closest cluster
-		for(int i=0;i<pl.size();i++) {
-			T.getNN(pl.get(i), Double.MAX_VALUE);
-			cl.get(i).setClosest(T.getNn().getPnt_nn().getC());
 			cl.get(i).setMean();
 		}
+		
+		if(pass.equals("1")) {
+			//compute the closest cluster
+			for(int i=0;i<pl.size();i++) {
+				T.getNN(pl.get(i), Double.MAX_VALUE);
+				cl.get(i).setClosest(T.getNn().getPnt_nn().getC());
+			}
+		}
+		else {
+			for(int i=0;i<cl.size();i++) {
+				List<Point> plist=cl.get(i).getRep();
+				Cluster cc=null;
+				double mindist=Double.MAX_VALUE;
+				for(int j=0;j<plist.size();j++) {
+					T.getNN(plist.get(j), Double.MAX_VALUE);
+					Point cp=T.getNn().getPnt_nn();
+					double dist=getdist(plist.get(j),cp);
+					if(dist<mindist)
+						cc=cp.getC();
+						
+				}
+				cl.get(i).setClosest(cc);
+			}
+		}
+		
+		
 		
 		//setting the heap
 		PriorityQueue<Cluster> Q=new PriorityQueue<Cluster>(new Comparator<Cluster>() {
