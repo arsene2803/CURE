@@ -110,13 +110,21 @@ public class testRun {
 			//delete u and v
 			T.delNode(u.getRep());
 			T.delNode(v.getRep());
+			System.out.println("Deleted");
 			//add the points from w
 			T.insertNode(w.getRep());
-			
+			System.out.println("Inserted"+w.getRep().size());
+			/*cl=getClusters(Q);
+			cl.add(w);
+			List<Point> plist=getPoints(cl);
+			T=new kdtree(plist);
+			System.out.println("merged"+w.getRep().size());*/
+
 			w.setClosest(Q.peek());
 			Iterator<Cluster> it=Q.iterator();
 			List<Cluster> mod_cl=new ArrayList<>();
 			while(it.hasNext()) {
+
 				Cluster x=it.next();
 				if(Q.size()==1) {
 					w.setClosest(x);

@@ -43,7 +43,7 @@ public class PointsCsv {
 		
 	}
 	public static void main(String[] args){
-		List<String> input=getPoints(1000000, 5000);
+		List<String> input=getPoints(10000, 5000);
 		writeCSV(input);
 		
 		

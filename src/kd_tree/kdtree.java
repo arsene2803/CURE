@@ -132,6 +132,7 @@ public class kdtree {
 				root=null;
 				return null;
 			}
+			return root;
 			
 		}
 		double p_coord=(d==0)?p.getX():p.getY();
@@ -145,8 +146,8 @@ public class kdtree {
 	}
 	
 	public Node delNode(Node root,Point p) {
-		root=delNode(root,p,0);
-		return root ;
+		this.root=delNode(root,p,0);
+		return this.root ;
 		
 	}
 	
@@ -191,7 +192,7 @@ public class kdtree {
 
 	private void copyPoints(Node root, Node min) {
 		// TODO Auto-generated method stub
-		root.pnt=min.pnt;
+		root=min;
 		
 		
 	}

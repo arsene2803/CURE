@@ -32,7 +32,7 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 	}
 	public void reduce(LongWritable key,Iterable<Text> values,Context context) throws IOException, InterruptedException {
 		//need to set the number of clusters k,the shrinking factor alpha and the number of scattered points
-		int k=10,c=56;
+		int k=300,c=56;
 		double alpha=0.8;
 		//each point will be individual cluster
 		List<Cluster> cl=new ArrayList<>();
@@ -200,7 +200,7 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 				if(x.getClosest()==u || x.getClosest()==v) {
 					
 					if(getdistCluster(x, x.getClosest())<getdistCluster(w, x)) {
-						x.setClosest(getClosestCluster(T,x,Double.MAX_VALUE));
+						x.setClosest(getClosestCluster(T,x,getdistCluster(w, x)));
 					}
 						
 					else
