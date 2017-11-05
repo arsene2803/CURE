@@ -70,13 +70,14 @@ public class CureDriver {
 	    	conf.set("pass","2");
 	    	Job job2=Job.getInstance(conf,"SECOND_PASS_CUREJOB");
 	    	job2.setJarByClass(CureDriver.class);
-	    	job2.setMapperClass(mapper.ClusterMapper.class);
 	    	job2.setReducerClass(Curereducer.class);
 	    	job2.setMapOutputKeyClass(LongWritable.class);
 		    job2.setMapOutputValueClass(Text.class);
 		    job2.setInputFormatClass(SequenceFileInputFormat.class);
 		    job2.setOutputKeyClass(Text.class);
 		    job2.setOutputValueClass(Text.class);
+		    job2.setMapperClass(mapper.ClusterMapper.class);
+		    job2.setNumReduceTasks(1);
 		    FileInputFormat.addInputPath(job2, new Path(args[1]));
 		    FileOutputFormat.setOutputPath(job2, new Path(args[3]));
 		    job2.waitForCompletion(true);
