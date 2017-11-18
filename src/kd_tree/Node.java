@@ -11,6 +11,8 @@ public class Node {
 	
 	public Node(int depth) {
 		this.depth=depth;
+		this.L=null;
+		this.R=null;
 	}
 	public boolean isLeaf() {
 		return (L==null)|(R==null);

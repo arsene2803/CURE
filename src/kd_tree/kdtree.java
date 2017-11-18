@@ -2,7 +2,10 @@ package kd_tree;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import util.Point;
 
@@ -18,6 +21,13 @@ public class kdtree {
 		nn=new NN(null);
 	}
 	
+	public kdtree() {
+		// TODO Auto-generated constructor stub
+		this.root=null;
+		nn=new NN(null);
+		
+	}
+
 	private void build(Node node, List<Point> points) {
 		// TODO Auto-generated method stub
 		
@@ -78,7 +88,8 @@ public class kdtree {
 			else
 				return findMin(root.L,d,depth+1);
 		}
-		return minNode(root,findMin(root.L,d,depth+1),findMin(root.R,d,depth+1),d);
+		else
+			return minNode(root,findMin(root.L,d,depth+1),findMin(root.R,d,depth+1),d);
 		
 	}
 	//wrapper for find
@@ -118,19 +129,19 @@ public class kdtree {
 				//find min in the right subtree
 				Node min=findMin(root.R, d,depth+1);
 				//copy the points
-				copyPoints(root,min);
+				root.pnt=min.pnt;
 				root.R=delNode(root.R,min.pnt,depth+1);
 			}
 			else if(root.L!=null) {
 				//same as above
 				Node min=findMin(root.L, d,depth+1);
 				//copy the points
-				copyPoints(root,min);
+				root.pnt=min.pnt;
+				root.L=null;
 				root.R=delNode(root.L,min.pnt,depth+1);
 			}
 			else {
 				root=null;
-				return null;
 			}
 			return root;
 			
@@ -184,18 +195,19 @@ public class kdtree {
 	}
 	
 	public Node insertNode(List<Point> pl) {
+		Set<Point> set=new HashSet<>();
 		for(int i=0;i<pl.size();i++) {
-			root=insertNode(root,pl.get(i));
+			
+			if(!set.contains(pl.get(i))) {
+				root=insertNode(root,pl.get(i));
+				set.add(pl.get(i));
+			}
+				
 		}
 		return root;
 	}
 
-	private void copyPoints(Node root, Node min) {
-		// TODO Auto-generated method stub
-		root=min;
-		
-		
-	}
+
 
 	public static class NN{
 		public Point getPnt_nn() {

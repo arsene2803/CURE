@@ -13,7 +13,7 @@ public class InsertSearchTest {
 		List<Point> pList1=new ArrayList<>();
 		pList1.add(new Point(30, 40));
 		pList1.add(new Point(5,25));
-		pList1.add(new Point(10,12));
+		pList1.add(new Point(10,25));
 		Cluster u=new Cluster(null, pList1,0);
 		List<Point> pList2=new ArrayList<>();
 		pList2.add(new Point(70,70));
@@ -21,6 +21,7 @@ public class InsertSearchTest {
 		Cluster v=new Cluster(null, pList2,0);
 		List<Point> pList3=new ArrayList<>();
 		pList3.add(new Point(35,40));
+		pList3.add(new Point(35,50));
 		Cluster z=new Cluster(null, pList3,0);
 		List<Cluster> cl=new ArrayList<>();
 		cl.add(u);

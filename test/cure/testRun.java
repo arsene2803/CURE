@@ -58,13 +58,15 @@ public class testRun {
 		
 		//getting the list of points
 				List<Point> pl =getPoints(cl);
-				//setting the kd tree
-				kdtree T=new kdtree(pl);
+				
 				//setting cluster for each point
 				for(int i=0;i<cl.size();i++) {
 					setClusterPoint(cl.get(i));
 					cl.get(i).setMean();
 				}
+				//setting the kdtree
+				kdtree T=new kdtree();
+				T.insertNode(pl);
 				computeClosestClusterFirst(cl, pl, T);
 				
 				//computeClosestClusterSecond(cl, T);
@@ -94,7 +96,8 @@ public class testRun {
 		long total_start_time=System.nanoTime();
         try {
         	
-			computeClusterkMerge(k,3, c, alpha, Q,T);
+			//computeClusterkMerge(k,3, c, alpha, Q,T);
+        	computeClusterHashMap(k, c, alpha, Q, T, cl);
 			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -440,15 +443,18 @@ public class testRun {
 			temp=pl;
 		}
 		
+		List<Point> res=new ArrayList<>();
+
 		for(int i=0;i<temp.size();i++) {
+			
 			Point p=temp.get(i);
 			double[] coord=getScatterPointCoord(p, alpha);
 			double xcoord=coord[0]+alpha*(w.getMean().getX()-coord[0]);
 			double ycoord=coord[1]+alpha*(w.getMean().getY()-coord[1]);
-			p.setX(xcoord);
-			p.setY(ycoord);
+			res.add(new Point(xcoord,ycoord));
+		
 		}
-		w.setRep(temp);
+		w.setRep(res);
 		setClusterPoint(w);
 		return w;
 		
@@ -519,6 +525,105 @@ public class testRun {
 		}
 		return null;
 	}
+	
+	public static void computeClusterHashMap(int k, int c, double alpha, PriorityQueue<Cluster> Q,kdtree T,List<Cluster> cl) throws Exception {
+		System.out.println("Computing clusters using CURE using HASHMAP optimization");
+		//build a hashmap 
+		Map<Cluster,List<Cluster>> hmap=new HashMap<>();
+		for(int i=0;i<cl.size();i++) {
+			Cluster cluster_key=cl.get(i).getClosest();
+			if(!hmap.containsKey(cluster_key)) {
+				List<Cluster> temp_cl=new ArrayList<>();
+				temp_cl.add(cl.get(i));
+				hmap.put(cluster_key, temp_cl);
+				
+			}
+			else {
+				hmap.get(cluster_key).add(cl.get(i));
+			}
+		}
+		//processing begins now
+		while(Q.size()>k) {
+			
+			System.out.println(Q.size());
+			Cluster u=Q.poll();
+			Cluster v=u.getClosest();
+			//delete v from priority queue
+			Q.remove(v);
+			//remove the points from the kdtree before the merge
+			T.delNode(u.getRep());
+			T.delNode(v.getRep());
+			Cluster w=merge(u,v,c,alpha);
+			//add the points from w
+			T.insertNode(w.getRep());
+
+			//removing u and v from the values end of HashMap
+			Cluster ckey=u.getClosest();
+			updateHMap(hmap, u, ckey);
+			ckey=v.getClosest();
+			updateHMap(hmap, v, ckey);
+			//getting the clusters which needs to be updated because of the merging
+			List<Cluster> mod_cl=new ArrayList<>();
+			//getting the clusters which had u and v as the closest ones
+			//removing u and v from the hmap
+			removeHMapEntry(hmap, u, mod_cl);
+			removeHMapEntry(hmap, v, mod_cl);
+			/*List<Cluster> cur_cl=getClusters(Q);
+			cur_cl.add(w);
+			T=new kdtree(getPoints(cur_cl));*/
+			//update the clusters affected due to merge
+			for(int i=0;i<mod_cl.size();i++) {
+				
+				Cluster cluster=mod_cl.get(i);
+				if(getdistCluster(cluster, cluster.getClosest())<getdistCluster(w,cluster)) {
+					cluster.setClosest(getClosestCluster(T,cluster,Double.MAX_VALUE));
+				}
+					
+				else
+					cluster.setClosest(w);
+			
+				Cluster key=cluster.getClosest();
+				addEntryHMap(hmap, cluster, key);
+			}
+			w.setClosest(getClosestCluster(T, w, Double.MAX_VALUE));
+			//updating the hashmap for the merged cluster
+			addEntryHMap(hmap, w, w.getClosest());
+			//update the priority queue
+			for(int i=0;i<mod_cl.size();i++) {
+				Cluster cluster=mod_cl.get(i);
+				Q.remove(cluster);
+				Q.add(cluster);
+			}
+			//adding the merged cluster to the Q
+			Q.add(w);
+			
+		}
+	}
+	public static void addEntryHMap(Map<Cluster, List<Cluster>> hmap, Cluster cluster, Cluster key) {
+		if(hmap.containsKey(key)) {
+			if(!hmap.get(key).contains(cluster))
+				hmap.get(key).add(cluster);
+		}
+		else
+		{
+			List<Cluster> temp=new ArrayList<>();
+			temp.add(cluster);
+			hmap.put(key,temp);
+		}
+	}
+	public static void updateHMap(Map<Cluster, List<Cluster>> hmap, Cluster u, Cluster ckey) {
+		//updating the hashmap entry
+		if(hmap.containsKey(ckey)) {
+			hmap.get(ckey).remove(u);
+		}
+	}
+	public static void removeHMapEntry(Map<Cluster, List<Cluster>> hmap, Cluster u, List<Cluster> mod_cl) {
+		if(hmap.containsKey(u)) {
+			mod_cl.addAll(hmap.get(u));
+			hmap.remove(u);
+		}
+	}
+	
 	public static void computeClusterkMerge(int k,int k_merge, int c, double alpha, PriorityQueue<Cluster> Q,kdtree T) throws Exception {
 
 		while(Q.size()>k && Q.size()>=k_merge*2) {
