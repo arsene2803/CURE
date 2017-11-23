@@ -253,6 +253,7 @@ public class kdtree {
 	public NN getNN(Point point,double min_dist) {
 		nn.min_dist=min_dist;
 		nn.pnt_in=point;
+		nn.pnt_nn=null;
 		getNN(nn,root);
 		return nn;
 	}

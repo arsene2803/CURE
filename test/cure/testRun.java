@@ -19,43 +19,20 @@ import com.opencsv.CSVReader;
 import kd_tree.kdtree;
 import util.Cluster;
 import util.Point;
+import util.PointsCsv;
 
 public class testRun {
 	static double kd_time=0;
 	static double merge_time=0;
 	static double itr_time=0;
 	public static void run_merge(List<String> values) {
-		int k=3,c=4;
+		int k=3,c=56;
 		double alpha=0.8;
 		//each point will be individual cluster
 		List<Cluster> cl=new ArrayList<>();
 		parseFirstPassInput(values, cl);
 		//parseInputSecondPass(values, cl);
 		System.out.println("Computing closest cluster");
-/*		//compute the closest cluster for individual clusters
-		for(int i=0;i<cl.size();i++) {
-			double min_distance=Double.MAX_VALUE;
-			int min_cluster_index=i;
-			double x1=cl.get(i).getRep().get(0).getX();
-			double y1=cl.get(i).getRep().get(0).getY();
-			for(int j=0;j<cl.size();j++) {
-				if(i!=j && cl.get(i).getClosest()==null) {
-					double x2=cl.get(j).getRep().get(0).getX();
-					double y2=cl.get(j).getRep().get(0).getY();
-					double distance=Math.sqrt(Math.pow(Math.abs(x1-x2), 2)+Math.pow(Math.abs(y1-y2), 2));
-					if(distance<min_distance) {
-						min_distance=distance;
-						min_cluster_index=j;
-					}
-					
-				}
-			}
-			//setting the closest and min_distance and the mean
-			cl.get(i).setClosest(cl.get(min_cluster_index));
-			cl.get(i).setMean();
-			
-		}*/
-		
 		//getting the list of points
 				List<Point> pl =getPoints(cl);
 				
@@ -113,7 +90,7 @@ public class testRun {
 		
 		
 	}
-	public static void run(List<String> values) {
+	public static void run(List<String> values) throws Exception {
 		int k=3,c=4;
 		double alpha=0.8;
 		//each point will be individual cluster
@@ -341,13 +318,15 @@ public class testRun {
 		
 	}
 	
-	private static Cluster getClosestCluster(kdtree t, Cluster x, double d) {
+	private static Cluster getClosestCluster(kdtree t, Cluster x, double d) throws Exception {
 		// TODO Auto-generated method stub
 		double min_dist=Double.MAX_VALUE;
 		Cluster closest=null;
 		List<Point> pl=x.getRep();
 		for(int i=0;i<pl.size();i++) {
 			t.getNN(pl.get(i), d);
+			if(t.getNn().getPnt_nn()==null)
+				throw new Exception("Invalid state");
 			double dist=getdist(t.getNn().getPnt_nn(),pl.get(i));
 			if(dist<=min_dist) {
 				min_dist=dist;
@@ -491,6 +470,7 @@ public class testRun {
 		List<String> input=new ArrayList<>();
 		//read from csv file
 		List<String[]> inp=readCSV("input.csv");
+		//inputSampleDataset(input, inp);
 		inputFirstPass(input, inp);
 		//inputSecondPass(input, inp);
 		//run(input);
@@ -506,6 +486,12 @@ public class testRun {
 	public static void inputFirstPass(List<String> input, List<String[]> inp) {
 		for(int i=0;i<inp.size();i++) {
 			input.add(inp.get(i)[0]+","+inp.get(i)[1]);
+		}
+	}
+	public static void inputSampleDataset(List<String> input, List<String[]> inp) {
+		for(int i=0;i<inp.size();i++) {
+			String[] val=inp.get(i)[0].trim().split(" +"); 
+			input.add(val[0]+","+val[1]);
 		}
 	}
 	public static List<String[]> readCSV(String fileName){
@@ -542,6 +528,8 @@ public class testRun {
 				hmap.get(cluster_key).add(cl.get(i));
 			}
 		}
+		int num_pnts_outlier=Q.size()*1/3;
+		boolean check_outlier=false;
 		//processing begins now
 		while(Q.size()>k) {
 			
@@ -585,7 +573,10 @@ public class testRun {
 				Cluster key=cluster.getClosest();
 				addEntryHMap(hmap, cluster, key);
 			}
-			w.setClosest(getClosestCluster(T, w, Double.MAX_VALUE));
+			Cluster closest=getClosestCluster(T, w, Double.MAX_VALUE);
+			if(!Q.contains(closest))
+				throw new Exception("Invalid state");
+			w.setClosest(closest);
 			//updating the hashmap for the merged cluster
 			addEntryHMap(hmap, w, w.getClosest());
 			//update the priority queue
@@ -596,8 +587,22 @@ public class testRun {
 			}
 			//adding the merged cluster to the Q
 			Q.add(w);
+			/*if(Q.size()<=num_pnts_outlier && !check_outlier) {
+				check_outlier=true;
+				remove_outLiers(Q);
+			}	*/
+		}
+	}
+	private static void remove_outLiers(PriorityQueue<Cluster> q) {
+		// TODO Auto-generated method stub
+		Iterator<Cluster> it=q.iterator();
+		while(it.hasNext()) {
+			Cluster c=it.next();
+			if(c.getRep().size()<=2)
+				it.remove();
 			
 		}
+		
 	}
 	public static void addEntryHMap(Map<Cluster, List<Cluster>> hmap, Cluster cluster, Cluster key) {
 		if(hmap.containsKey(key)) {

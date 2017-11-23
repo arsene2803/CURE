@@ -1,7 +1,9 @@
 package cure;
 
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -99,6 +101,8 @@ public class AssignCluster {
 				cmap.get(p.getC()).add(p);
 			}
 		}
+		//Write the results to a file
+		fileWrite(cmap,"output");
 		System.out.println("Calculating the silhoute ecofficient");
 		List<Double> sl_cofficient=new ArrayList<>();
 		for(int i=0;i<pl.size();i++) {
@@ -140,6 +144,29 @@ public class AssignCluster {
 		}
 		System.out.println("Average silhoute ecofficent is "+sum_e/sl_cofficient.size());
 	}
+	private static void fileWrite(Map<Cluster, List<Point>> cmap,String fileName) {
+		// TODO Auto-generated method stub
+		int counter=0;
+		try {
+			FileWriter fw=new FileWriter(fileName);
+			BufferedWriter bw=new BufferedWriter(fw);
+			for(List<Point> pl:cmap.values()) {
+				for(int i=0;i<pl.size();i++) {
+					bw.write(counter+"\n");
+				}
+				counter++;
+			}
+			bw.close();
+			fw.close();
+				
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+			
+    }
+		
 	private static double getdist(Point p1, Point p2) {
 		double dx=p1.getX()-p2.getX();
 		double dy=p1.getY()-p2.getY();

@@ -28,9 +28,9 @@ public class PointsCsv {
 		return result;
 		
 	}
-	public static void writeCSV(List<String> input){
+	public static void writeCSV(List<String> input,String fileName){
 		try {
-			CSVWriter writer=new CSVWriter(new FileWriter("input.csv"),',');
+			CSVWriter writer=new CSVWriter(new FileWriter(fileName),',');
 			for(int i=0;i<input.size();i++){
 				String[] row=input.get(i).split(",");
 				writer.writeNext(row);
@@ -44,7 +44,7 @@ public class PointsCsv {
 	}
 	public static void main(String[] args){
 		List<String> input=getPoints(100000, 10000);
-		writeCSV(input);
+		writeCSV(input,"input.csv");
 		
 		
 	}

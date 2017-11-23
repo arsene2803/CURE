@@ -33,9 +33,9 @@ public class CureDriver {
 	public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
 		
 		//Checking for the number of arguments
-		if(args.length != 5) {
+		if(args.length != 4) {
 			System.out.println(args.length);
-			throw new IllegalArgumentException("Arguments expected- input output Number_Of_partitions first_pass_dir first_pass_file_name"
+			throw new IllegalArgumentException("Arguments expected- input output Number_Of_partitions final_dir"
 					);
 		}
 		
