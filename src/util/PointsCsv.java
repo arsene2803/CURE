@@ -9,32 +9,25 @@ import com.opencsv.CSVWriter;
 
 
 public class PointsCsv {
-	public static List<String> getPoints(int numPoints,int range){
-		Random rand=new Random();
-		int count=0;
-		HashSet<String> pointset=new HashSet<String>();
-		List<String> result=new ArrayList<>();
-		while(count<=numPoints){
-			float x=rand.nextFloat()*range;
-			float y=rand.nextFloat()*range;
-			String point=x+","+y;
-			if(!pointset.contains(point)){
-				pointset.add(point);
-				result.add(point);
-				count++;
-			}
-			
-		}
-		return result;
+
 		
-	}
-	public static void writeCSV(List<String> input,String fileName){
+	public static void writeCSV(String fileName,int numPoints,int range){
 		try {
 			CSVWriter writer=new CSVWriter(new FileWriter(fileName),',');
-			for(int i=0;i<input.size();i++){
-				String[] row=input.get(i).split(",");
-				writer.writeNext(row);
+			Random rand=new Random();
+			int count=0;
+			HashSet<String> pointset=new HashSet<String>();
+			while(count<=numPoints){
+				float x=rand.nextFloat()*range;
+				float y=rand.nextFloat()*range;
+				String point=x+","+y;
+				if(!pointset.contains(point)){
+					writer.writeNext(point.split(","));
+					count++;
+				}
+				
 			}
+			
 			writer.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -43,8 +36,7 @@ public class PointsCsv {
 		
 	}
 	public static void main(String[] args){
-		List<String> input=getPoints(100000, 10000);
-		writeCSV(input,"input.csv");
+		writeCSV("input.csv",100000000/2,100000);
 		
 		
 	}

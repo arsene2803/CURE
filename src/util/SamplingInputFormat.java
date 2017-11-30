@@ -18,7 +18,7 @@ public class SamplingInputFormat extends TextInputFormat{
 		Random r=new Random();
 		final double samp_percen=0.7;
 		List<InputSplit> totalIs=super.getSplits(arg0);
-		int k=(int) (totalIs.size() *samp_percen);
+		int k=(int) Math.ceil(totalIs.size() *samp_percen);
 		
 		if(k==0) {
 			return totalIs;
@@ -31,7 +31,7 @@ public class SamplingInputFormat extends TextInputFormat{
 		for(;i<totalIs.size();i++) {
 			int j=r.nextInt(i+1);
 			if(j<k)
-				sampIs.set(i, totalIs.get(i));
+				sampIs.set(j, totalIs.get(i));
 		}
 		return sampIs;
 	}

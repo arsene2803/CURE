@@ -16,6 +16,7 @@ import org.apache.hadoop.io.Text;
 
 import com.opencsv.CSVReader;
 
+import Reducer.Curereducer;
 import kd_tree.kdtree;
 import util.Cluster;
 import util.Point;
@@ -26,7 +27,7 @@ public class testRun {
 	static double merge_time=0;
 	static double itr_time=0;
 	public static void run_merge(List<String> values) {
-		int k=3,c=56;
+		int k=15,c=56;
 		double alpha=0.8;
 		//each point will be individual cluster
 		List<Cluster> cl=new ArrayList<>();
@@ -74,7 +75,7 @@ public class testRun {
         try {
         	
 			//computeClusterkMerge(k,3, c, alpha, Q,T);
-        	computeClusterHashMap(k, c, alpha, Q, T, cl);
+        	Curereducer.computeClusterHashMap(k, c, alpha, Q, T, cl);
 			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

@@ -417,6 +417,10 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 		//setting the mean
 		w.setMean();
 		List<Point> temp=new ArrayList<>();
+		//remove the points from kd_tree
+		for(int i=0;i<clist.size();i++) {
+			T.delNode(clist.get(i).getRep());
+		}
 		//getting the scattered points
 		if(pl.size()>c) {
 
@@ -466,10 +470,7 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 		w.setRep(temp);
 		setClusterPoint(w);
 		w.setMean();
-		//remove the points from kd_tree
-		for(int i=0;i<clist.size();i++) {
-			T.delNode(clist.get(i).getRep());
-		}
+		
 		//add w's rep points to T
 		T.insertNode(w.getRep());
 		
@@ -498,7 +499,7 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 				if(merge_cl.contains(x.getClosest())) {
 					
 					if(getdistCluster(x, x.getClosest())<getdistCluster(w, x)) {
-						x.setClosest(getClosestCluster(T,x,getdistCluster(w, x)));
+						x.setClosest(getClosestCluster(T,x,Double.MAX_VALUE));
 					}
 						
 					else
@@ -537,10 +538,32 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 		boolean check_outlier=false;
 		//processing begins now
 		while(Q.size()>k) {
-			
 			System.out.println(Q.size());
 			Cluster u=Q.poll();
 			Cluster v=u.getClosest();
+			Cluster u_closest=getClosestCluster(T, u, Double.MAX_VALUE);
+			
+			while(v!=u_closest) {				
+				updateHMap(hmap, u,v);
+				//add entry
+				addEntryHMap(hmap, u, u_closest);
+				u.setClosest(u_closest);
+				if(v.getClosest()==u) {
+					Cluster v_closest=getClosestCluster(T, v, Double.MAX_VALUE);
+					updateHMap(hmap, v,u);
+					//add entry
+					addEntryHMap(hmap, v, v_closest);
+					v.setClosest(v_closest);
+					Q.remove(v);
+					Q.add(v);
+				}
+				//add it to the queue
+				Q.add(u);
+				u=Q.poll();
+				v=u.getClosest();
+				u_closest=getClosestCluster(T, u, Double.MAX_VALUE);	
+			}
+			
 			//delete v from priority queue
 			Q.remove(v);
 			//remove the points from the kdtree before the merge
@@ -568,6 +591,7 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 			for(int i=0;i<mod_cl.size();i++) {
 				
 				Cluster cluster=mod_cl.get(i);
+				updateHMap(hmap, cluster, cluster.getClosest());
 				if(getdistCluster(cluster, cluster.getClosest())<getdistCluster(w,cluster)) {
 					//need to optimise this part
 					cluster.setClosest(getClosestCluster(T,cluster,Double.MAX_VALUE));
@@ -579,9 +603,42 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 				Cluster key=cluster.getClosest();
 				addEntryHMap(hmap, cluster, key);
 			}
-			w.setClosest(getClosestCluster(T, w, Double.MAX_VALUE));
+			Cluster closest=getClosestCluster(T, w, Double.MAX_VALUE);
+			
+			if(closest.getMin_distance()>=getdistCluster(w,closest)) {
+				ckey=closest.getClosest();
+				//remove entry
+				updateHMap(hmap, closest, ckey);
+				closest.setClosest(w);
+				//add entry
+				addEntryHMap(hmap, closest, w);
+				//adding it to modified list
+				if(!mod_cl.contains(closest))
+					mod_cl.add(closest);
+				//get all the clusters which are closest 
+				List<Cluster> clist=hmap.get(ckey);
+				for(int i=0;i<clist.size();i++) {
+					Cluster m=clist.get(i);
+					if(m.getMin_distance()<=getdistCluster(w,closest))
+					{
+						ckey=m.getClosest();
+						//remove entry
+						updateHMap(hmap, m, ckey);
+						m.setClosest(w);
+						//add entry
+						addEntryHMap(hmap, m, w);
+						//adding it to modified list
+						if(!mod_cl.contains(m))
+							mod_cl.add(m);
+					}
+					
+					
+				}
+			}
+			w.setClosest(closest);
 			//updating the hashmap for the merged cluster
 			addEntryHMap(hmap, w, w.getClosest());
+			
 			//update the priority queue
 			for(int i=0;i<mod_cl.size();i++) {
 				Cluster cluster=mod_cl.get(i);
