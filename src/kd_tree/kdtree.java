@@ -137,8 +137,8 @@ public class kdtree {
 				Node min=findMin(root.L, d,depth+1);
 				//copy the points
 				root.pnt=min.pnt;
-				root.L=null;
 				root.R=delNode(root.L,min.pnt,depth+1);
+				root.L=null;
 			}
 			else {
 				root=null;
@@ -174,6 +174,7 @@ public class kdtree {
 		if(root==null) {
 			Node n= new Node(depth);
 			n.pnt=p;
+			n.depth=depth;
 			return n;
 		}
 		
@@ -229,18 +230,12 @@ public class kdtree {
 		}
 		
 		void update(Node node) {
+			if((node.pnt.getC()==pnt_in.getC()))
+				return;
 			
 			double dx=node.pnt.getX()-pnt_in.getX();
 			double dy=node.pnt.getY()-pnt_in.getY();
-			//checking if its the same point
-			if((dx==0 && dy==0)||(pnt_in.getC()!=null && (node.pnt.getC()!=null)&&(pnt_in.getC()==node.pnt.getC())))
-				return ;
-			//checking whether it belongs to same cluster
-			if(node.pnt.getC()!=null && pnt_in.getC()!=null)
-			{
-				if((node.pnt.getC()==pnt_in.getC()))
-					return;
-			}
+			
 			double cur_dist=Math.sqrt(dx*dx+dy*dy);
 			if(cur_dist<min_dist) {
 				pnt_nn=node.pnt;

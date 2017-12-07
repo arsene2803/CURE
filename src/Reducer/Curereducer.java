@@ -125,20 +125,7 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 		
 		
 		
-		//setting the heap
-		PriorityQueue<Cluster> Q=new PriorityQueue<Cluster>(new Comparator<Cluster>() {
-
-			@Override
-			public int compare(Cluster o1, Cluster o2) {
-		
-					// TODO Auto-generated method stub
-					return Double.compare(o1.getMin_distance(), o2.getMin_distance());
-			}
-		});
-		//adding to the priority queue
-		for(int h=0;h<cl.size();h++) {
-			Q.add(cl.get(h));
-		}
+		PriorityQueue<Cluster> Q = initializePriorityQueue(cl);
 		//set the cluster of each point
 		System.out.println("Starting to compute CURE");
         try {
@@ -162,13 +149,30 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 		
 	
 	}
+	public static PriorityQueue<Cluster> initializePriorityQueue(List<Cluster> cl) {
+		//setting the heap
+		PriorityQueue<Cluster> Q=new PriorityQueue<Cluster>(new Comparator<Cluster>() {
+
+			@Override
+			public int compare(Cluster o1, Cluster o2) {
+		
+					// TODO Auto-generated method stub
+					return Double.compare(o1.getMin_distance(), o2.getMin_distance());
+			}
+		});
+		//adding to the priority queue
+		for(int h=0;h<cl.size();h++) {
+			Q.add(cl.get(h));
+		}
+		return Q;
+	}
 	public void computeClosestFirstPass(List<Cluster> cl, List<Point> pl, kdtree T) {
 		for(int i=0;i<pl.size();i++) {
 			T.getNN(pl.get(i), Double.MAX_VALUE);
 			cl.get(i).setClosest(T.getNn().getPnt_nn().getC());
 		}
 	}
-	public void computeClosestSecondPass(List<Cluster> cl, kdtree T) {
+	public static void computeClosestSecondPass(List<Cluster> cl, kdtree T) {
 		for(int i=0;i<cl.size();i++) {
 			List<Point> plist=cl.get(i).getRep();
 			Cluster cc=null;
@@ -377,7 +381,7 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 		}
 		
 	}
-	public List<Cluster> getClusters(PriorityQueue<Cluster> Q){
+	public static List<Cluster> getClusters(PriorityQueue<Cluster> Q){
 		List<Cluster> cl=new ArrayList<>();
 		Iterator<Cluster> it=Q.iterator();
 		while(it.hasNext()) {
