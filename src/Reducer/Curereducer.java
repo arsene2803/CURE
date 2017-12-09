@@ -400,17 +400,12 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 	}
 	public static Cluster merge(PriorityQueue<Cluster> Q,kdtree T,int k_merge,int c,double alpha,List<Cluster> clist) throws Exception {
 		//get the list of clusters to be merged 
-		if(Q.size()>=k_merge*2) {
-			int counter=1;
-			while(counter++<=k_merge*2) {
+		int counter=1;
+		while(counter++<=k_merge) {
 				Cluster cluster=Q.poll();
 				Q.remove(cluster.getClosest());
 				clist.add(cluster);
 				clist.add(cluster.getClosest());
-			}
-		}else
-		{
-			throw new Exception("Not enough cluster to be merged");
 		}
 		//retrive all the points 
 		List<Point> pl=new ArrayList<>();
@@ -462,16 +457,15 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 		else {
 			temp=pl;
 		}
-		
+		List<Point> res=new ArrayList<>();
 		for(int i=0;i<temp.size();i++) {
 			Point p=temp.get(i);
 			double[] coord=getScatterPointCoord(p, alpha);
 			double xcoord=coord[0]+alpha*(w.getMean().getX()-coord[0]);
 			double ycoord=coord[1]+alpha*(w.getMean().getY()-coord[1]);
-			p.setX(xcoord);
-			p.setY(ycoord);
+			res.add(new Point(xcoord,ycoord));
 		}
-		w.setRep(temp);
+		w.setRep(res);
 		setClusterPoint(w);
 		w.setMean();
 		
@@ -482,11 +476,11 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 		
 		
 	}
-	public void computeClusterkMerge(int k, int c, double alpha, PriorityQueue<Cluster> Q,kdtree T) throws Exception {
+	public void computeClusterkMerge(int k,int k_merge, int c, double alpha, PriorityQueue<Cluster> Q,kdtree T) throws Exception {
 
-		while(Q.size()>k) {
+		while(Q.size()>k && Q.size()>=k_merge*2) {
 			List<Cluster> merge_cl=new ArrayList<>();
-			Cluster w=merge(Q,T,3,c,alpha,merge_cl);
+			Cluster w=merge(Q,T,k_merge,c,alpha,merge_cl);
 			w.setClosest(Q.peek());
 			Iterator<Cluster> it=Q.iterator();
 			List<Cluster> mod_cl=new ArrayList<>();
