@@ -26,6 +26,12 @@ public class Cluster  {
 	public Point getMean() {
 		return mean;
 	}
+	public void setMean(double xcoord,double ycoord) {
+		if(mean==null)
+			mean=new Point();
+		mean.setX(xcoord);
+		mean.setY(ycoord);
+	}
 	public void setMean() {
 		if(mean==null)
 			mean=new Point();

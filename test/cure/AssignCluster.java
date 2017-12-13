@@ -121,12 +121,7 @@ public class AssignCluster {
 			double min_avg_d=Double.MAX_VALUE;
 			for(Cluster cluster:cmap.keySet()) {
 				if(p.getC()!=cluster) {
-					sum_d=0;
-					List<Point> tl=cmap.get(cluster);
-					for(int u=0;u<tl.size();u++) {
-						sum_d+=getdist(p, tl.get(u));
-					}
-					double avg_d=sum_d/tl.size();
+					double avg_d=getdist(p, cluster.getMean());
 					if(avg_d<=min_avg_d) {
 						min_avg_d=avg_d;
 					}

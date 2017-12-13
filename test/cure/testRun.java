@@ -74,8 +74,8 @@ public class testRun {
 		long total_start_time=System.nanoTime();
         try {
         	
-			computeClusterkMerge(k,3, c, alpha, Q,T);
-        	//Curereducer.computeClusterHashMap(k, c, alpha, Q, T, cl);
+			//computeClusterkMerge(k,3, c, alpha, Q,T);
+        	Curereducer.computeClusterHashMap(k, c, alpha, Q, T, cl);
 			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

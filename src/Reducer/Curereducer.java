@@ -288,8 +288,10 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 		pl.addAll(u.getRep());
 		pl.addAll(v.getRep());
 		Cluster w=new Cluster(null, pl, 0);
+		double mean_xcoord=(u.getMean().getX()+v.getMean().getX())/pl.size();
+		double mean_ycoord=(u.getMean().getY()+v.getMean().getY())/pl.size();
 		//setting the mean
-		w.setMean();
+		w.setMean(mean_xcoord, mean_ycoord);
 		//getting the scattered points
 		if(pl.size()>c) {
 
@@ -333,15 +335,26 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 		for(int i=0;i<temp.size();i++) {
 			
 			Point p=temp.get(i);
+			Cluster pc=p.getC();
 			double[] coord=getScatterPointCoord(p, alpha);
-			double xcoord=coord[0]+alpha*(w.getMean().getX()-coord[0]);
-			double ycoord=coord[1]+alpha*(w.getMean().getY()-coord[1]);
+			double xcoord,ycoord;
+			if(pc.getRep().size()==1)
+			{
+				double x=p.getX();
+				double y=p.getY();
+				xcoord=x+alpha*(w.getMean().getX()-x);
+				ycoord=y+alpha*(w.getMean().getY()-y);	
+			}
+			else
+			{
+				xcoord=coord[0]+alpha*(w.getMean().getX()-coord[0]);
+				ycoord=coord[1]+alpha*(w.getMean().getY()-coord[1]);
+			}
 			res.add(new Point(xcoord,ycoord));
 		
 		}
 		w.setRep(res);
 		setClusterPoint(w);
-		w.setMean();
 		return w;
 		
 		
@@ -519,19 +532,7 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 	public static void computeClusterHashMap(int k, int c, double alpha, PriorityQueue<Cluster> Q,kdtree T,List<Cluster> cl) throws Exception {
 		System.out.println("Computing clusters using CURE using HASHMAP optimization");
 		//build a hashmap 
-		Map<Cluster,List<Cluster>> hmap=new HashMap<>();
-		for(int i=0;i<cl.size();i++) {
-			Cluster cluster_key=cl.get(i).getClosest();
-			if(!hmap.containsKey(cluster_key)) {
-				List<Cluster> temp_cl=new ArrayList<>();
-				temp_cl.add(cl.get(i));
-				hmap.put(cluster_key, temp_cl);
-				
-			}
-			else {
-				hmap.get(cluster_key).add(cl.get(i));
-			}
-		}
+		Map<Cluster, List<Cluster>> hmap = buildHMap(cl);
 		int num_pnts_outlier=Q.size()*1/3;
 		boolean check_outlier=false;
 		//processing begins now
@@ -614,24 +615,27 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 				if(!mod_cl.contains(closest))
 					mod_cl.add(closest);
 				//get all the clusters which are closest 
-				List<Cluster> clist=hmap.get(ckey);
-				for(int i=0;i<clist.size();i++) {
-					Cluster m=clist.get(i);
-					if(m.getMin_distance()<=getdistCluster(w,closest))
-					{
-						ckey=m.getClosest();
-						//remove entry
-						updateHMap(hmap, m, ckey);
-						m.setClosest(w);
-						//add entry
-						addEntryHMap(hmap, m, w);
-						//adding it to modified list
-						if(!mod_cl.contains(m))
-							mod_cl.add(m);
+				if(hmap.get(ckey)!=null) {
+					List<Cluster> clist=hmap.get(ckey);
+					for(int i=0;i<clist.size();i++) {
+						Cluster m=clist.get(i);
+						if(m.getMin_distance()<=getdistCluster(w,closest))
+						{
+							ckey=m.getClosest();
+							//remove entry
+							updateHMap(hmap, m, ckey);
+							m.setClosest(w);
+							//add entry
+							addEntryHMap(hmap, m, w);
+							//adding it to modified list
+							if(!mod_cl.contains(m))
+								mod_cl.add(m);
+						}
+						
+						
 					}
-					
-					
 				}
+
 			}
 			w.setClosest(closest);
 			//updating the hashmap for the merged cluster
@@ -644,21 +648,65 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 				Q.add(cluster);
 			}
 			Q.add(w);
-			/*if(Q.size()<=num_pnts_outlier && !check_outlier) {
+			
+			//removing the outliers
+			if(Q.size()<=num_pnts_outlier && !check_outlier) {
 				check_outlier=true;
-				remove_outLiers(Q);
-			}*/
+				remove_outLiers(Q,hmap,T);
+			}
 		}
 	}
-	private static void remove_outLiers(PriorityQueue<Cluster> q) {
+	public static Map<Cluster, List<Cluster>> buildHMap(List<Cluster> cl) {
+		Map<Cluster,List<Cluster>> hmap=new HashMap<>();
+		for(int i=0;i<cl.size();i++) {
+			Cluster cluster_key=cl.get(i).getClosest();
+			if(!hmap.containsKey(cluster_key)) {
+				List<Cluster> temp_cl=new ArrayList<>();
+				temp_cl.add(cl.get(i));
+				hmap.put(cluster_key, temp_cl);
+				
+			}
+			else {
+				hmap.get(cluster_key).add(cl.get(i));
+			}
+		}
+		return hmap;
+	}
+	private static void remove_outLiers(PriorityQueue<Cluster> q, Map<Cluster, List<Cluster>> hmap, kdtree T) {
 		// TODO Auto-generated method stub
 		Iterator<Cluster> it=q.iterator();
 		while(it.hasNext()) {
 			Cluster c=it.next();
-			if(c.getRep().size()<=2)
+			List<Cluster> mod_cl;
+			if(c.getRep().size()<=2) {
 				it.remove();
-			
+			/*	T.delNode(c.getRep());
+				if(hmap.containsKey(c)) {
+					//updating where c is in the values end of hmap
+					updateHMap(hmap, c, c.getClosest());
+					mod_cl=hmap.get(c);
+					for(int i=0;i<mod_cl.size();i++) {
+						Cluster cluster=mod_cl.get(i);
+						Cluster closest=getClosestCluster(T, cluster,Double.MAX_VALUE);
+						cluster.setClosest(closest);
+						addEntryHMap(hmap, cluster, closest);
+					}
+					//remove entry from hash map
+					hmap.remove(c);
+					
+				}*/
+			}
 		}
+		System.out.println("Outliers removed");
+		System.out.println("Reseting to initial state");
+		List<Cluster> cl=getClusters(q);
+		List<Point> pl=getPoints(cl);
+		T=new kdtree();
+		T.insertNode(pl);
+		computeClosestSecondPass(cl, T);
+		q=initializePriorityQueue(cl);
+		hmap=buildHMap(cl);
+		
 		
 	}
 	public static void addEntryHMap(Map<Cluster, List<Cluster>> hmap, Cluster cluster, Cluster key) {
