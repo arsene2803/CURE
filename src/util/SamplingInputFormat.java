@@ -16,7 +16,7 @@ public class SamplingInputFormat extends TextInputFormat{
 		// TODO Auto-generated method stub
 		int i;
 		Random r=new Random();
-		final double samp_percen=0.7;
+		final double samp_percen=0.6;
 		List<InputSplit> totalIs=super.getSplits(arg0);
 		int k=(int) Math.ceil(totalIs.size() *samp_percen);
 		

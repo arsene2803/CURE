@@ -196,13 +196,9 @@ public class kdtree {
 	}
 	
 	public Node insertNode(List<Point> pl) {
-		Set<Point> set=new HashSet<>();
+
 		for(int i=0;i<pl.size();i++) {
-			
-			if(!set.contains(pl.get(i))) {
-				root=insertNode(root,pl.get(i));
-				set.add(pl.get(i));
-			}
+			root=insertNode(root,pl.get(i));
 				
 		}
 		return root;
@@ -280,6 +276,10 @@ public class kdtree {
 			return pnt_in.getX()-node.pnt.getX();
 		else
 			return pnt_in.getY()-node.pnt.getY();
+	}
+	public Point getClosestPoint() {
+		return nn.pnt_nn;
+		
 	}
 	
 }

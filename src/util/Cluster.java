@@ -31,6 +31,7 @@ public class Cluster  {
 			mean=new Point();
 		mean.setX(xcoord);
 		mean.setY(ycoord);
+		mean.setC(this);
 	}
 	public void setMean() {
 		if(mean==null)
@@ -46,6 +47,7 @@ public class Cluster  {
 		}
 		mean.setX(sum_x/rep.size());
 		mean.setY(sum_y/rep.size());
+		mean.setC(this);
 		
 		
 	}

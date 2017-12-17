@@ -13,15 +13,17 @@ import java.util.StringTokenizer;
 
 import com.opencsv.CSVReader;
 
+import Reducer.Curereducer;
+import kd_tree.kdtree;
 import util.Cluster;
 import util.Point;
 
 public class AssignCluster {
-	public static void main(String[] args) {
+	public static void getClusters(String clusterFilename) {
 		List<String> clusterPoints=new ArrayList<>();
 		List<Cluster> cl=new ArrayList<>();
 		//read from csv file
-		List<String[]> inp=readCSV(args[1],'\t');
+		List<String[]> inp=readCSV(clusterFilename,'\t');
 
 		for(int i=0;i<inp.size();i++) {
 			clusterPoints.add(inp.get(i)[0]+"|"+inp.get(i)[1]);
@@ -50,17 +52,98 @@ public class AssignCluster {
 		for(List<Point> plist:hmap.values()) {
 			cl.add(new Cluster(null,plist,0));
 		}
-		getAccuracy(args[0], cl);
-		
-		
 	}
 	public static void getAccuracy(String inputFileName, List<Cluster> cl) {
 		List<String[]> inp;
+		final int BATCH_SIZE=100000;
+		List<Double> sl_cofficient=new ArrayList<>();
 		//read the input 
 		inp=readCSV(inputFileName,',');
-		List<Point> pl=new ArrayList<>();
-		List<String> input=new ArrayList<>(); 
-		for(int i=0;i<inp.size();i++) {
+		double splits=Math.ceil(inp.size()/BATCH_SIZE);
+		System.out.println("Number of splits: "+splits);
+		Map<Cluster,List<Point>> cmap=new HashMap<>();
+		kdtree T=new kdtree();
+		T.insertNode(Curereducer.getPoints(cl));
+		for(int counter=0;counter<splits;counter++) {
+			System.out.println("Split no :"+(counter+1));
+			List<Point> pl=new ArrayList<>();
+			List<String> input=new ArrayList<>(); 
+			for(int k=0;k<BATCH_SIZE;k++) {
+				int index=k+counter*BATCH_SIZE;
+				if(index>=inp.size())
+					break ;
+				input.add(inp.get(index)[0]+","+inp.get(index)[1]);
+			}
+			//points int line_count=input.size();
+			for(String val:input) {
+				//assign clusters
+				
+				int i=0;
+				double[] coord=new double[2]; 
+				String line=val.toString();
+				StringTokenizer st=new StringTokenizer(line);
+				while(st.hasMoreTokens()) {
+					coord[i++]=Double.parseDouble(st.nextToken(","));
+				}
+				Point p=new Point(coord[0],coord[1]);
+				pl.add(p);
+				T.getNN(p, Double.MAX_VALUE);
+				p.setC(T.getClosestPoint().getC());
+				if(!cmap.containsKey(p.getC())) {
+					List<Point> temp=new ArrayList<>();
+					temp.add(p);
+					cmap.put(p.getC(), temp);
+				}
+				else
+				{
+					cmap.get(p.getC()).add(p);
+				}
+				
+			}
+
+		}
+		//create kdtree of mean points of all cluster
+		List<Point> mean_pl=new ArrayList<>();
+		for(int n=0;n<cl.size();n++) {
+			mean_pl.add(cl.get(n).getMean());
+		}
+		T=new kdtree();
+		T.insertNode(mean_pl);
+		List<Point> pl =new ArrayList();
+		for(List<Point> listp:cmap.values()) {
+			pl.addAll(listp);
+			
+		}
+		System.out.println("Calculating the index: ");
+		System.out.println("Points to be processed "+pl.size());
+		for(int i=0;i<pl.size();i++) {
+			System.out.println(i);
+			//calculating ai
+			Point p=pl.get(i);
+			List<Point> plist=cmap.get(p.getC());
+			double sum_d=0;
+			for(int k=0;k<plist.size();k++) {
+				Point t=plist.get(k);
+				if(p!=t) {
+					sum_d+=getdist(p, t);
+				}
+			}
+			double a_i=sum_d/(plist.size()-1);
+			T.getNN(p, Double.MAX_VALUE);
+			Point c=T.getClosestPoint();
+			double min_avg_d=getdist(p, c);
+			//iterating through hashmap
+			
+			double si=(min_avg_d-a_i)/(Math.max(min_avg_d, a_i));
+			sl_cofficient.add(si);
+			
+		}
+		double sum_e=0;
+		for(int v=0;v<sl_cofficient.size();v++) {
+			sum_e+=sl_cofficient.get(v);
+		}
+		
+		/*for(int i=0;i<inp.size();i++) {
 			input.add(inp.get(i)[0]+","+inp.get(i)[1]);
 		}
 		for(String val:input) {
@@ -102,7 +185,7 @@ public class AssignCluster {
 			}
 		}
 		//Write the results to a file
-		fileWrite(cmap,"output");
+		//fileWrite(cmap,"output");
 		System.out.println("Calculating the silhoute ecofficient");
 		List<Double> sl_cofficient=new ArrayList<>();
 		for(int i=0;i<pl.size();i++) {
@@ -136,7 +219,7 @@ public class AssignCluster {
 		double sum_e=0;
 		for(int v=0;v<sl_cofficient.size();v++) {
 			sum_e+=sl_cofficient.get(v);
-		}
+		}*/
 		System.out.println("Average silhoute ecofficent is "+sum_e/sl_cofficient.size());
 	}
 	private static void fileWrite(Map<Cluster, List<Point>> cmap,String fileName) {

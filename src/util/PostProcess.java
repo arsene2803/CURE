@@ -30,7 +30,7 @@ public class PostProcess {
 		CSVWriter writer=new CSVWriter(new FileWriter(finalOutputPath),'\t');
 		return writer;
 	}
-	public static void runSecondPass(String outputPath,String finalOutputPath) throws IOException {
+	public static List<Cluster> runSecondPass(String outputPath,String finalOutputPath) throws IOException {
 		Map<String,List<Point>> hmap=new HashMap<>();
 		File[] output=getFiles(outputPath);
 		for(int i=0;i<output.length;i++) {
@@ -87,7 +87,13 @@ public class PostProcess {
 		}
         cl=Curereducer.getClusters(Q);
         //write to the output
-        int counter=1;
+        writeFinalClusters(finalOutputPath, cl);
+        return cl;
+		
+		
+	}
+	public static void writeFinalClusters(String finalOutputPath, List<Cluster> cl) throws IOException {
+		int counter=1;
         CSVWriter writer=createCsvWrtier(finalOutputPath);
 		for(int i=0;i<cl.size();i++) {
 			List<Point> rl=cl.get(i).getRep();
@@ -100,8 +106,6 @@ public class PostProcess {
 			
 		}
 		closeFile(writer);
-		
-		
 	}
 	public static void closeFile(CSVWriter writer) throws IOException {
 		writer.close();

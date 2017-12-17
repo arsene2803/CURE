@@ -252,7 +252,7 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 		Cluster closest=null;
 		List<Point> pl=x.getRep();
 		for(int i=0;i<pl.size();i++) {
-			t.getNN(pl.get(i), d);
+			t.getNN(pl.get(i), Double.MAX_VALUE);
 			double dist=getdist(t.getNn().getPnt_nn(),pl.get(i));
 			if(dist<=min_dist) {
 				min_dist=dist;
@@ -602,6 +602,7 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 				Cluster key=cluster.getClosest();
 				addEntryHMap(hmap, cluster, key);
 			}
+
 			Cluster closest=getClosestCluster(T, w, Double.MAX_VALUE);
 			
 			if(closest.getMin_distance()>=getdistCluster(w,closest)) {
@@ -653,6 +654,15 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 			if(Q.size()<=num_pnts_outlier && !check_outlier) {
 				check_outlier=true;
 				remove_outLiers(Q,hmap,T);
+				System.out.println("Outliers removed");
+				System.out.println("Reseting to initial state");
+				List<Cluster> rem_cl=getClusters(Q);
+				List<Point> pl=getPoints(rem_cl);
+				T=new kdtree();
+				T.insertNode(pl);
+				computeClosestSecondPass(rem_cl, T);
+				Q=initializePriorityQueue(rem_cl);
+				hmap=buildHMap(rem_cl);
 			}
 		}
 	}
@@ -677,7 +687,6 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 		Iterator<Cluster> it=q.iterator();
 		while(it.hasNext()) {
 			Cluster c=it.next();
-			List<Cluster> mod_cl;
 			if(c.getRep().size()<=2) {
 				it.remove();
 			/*	T.delNode(c.getRep());
@@ -697,15 +706,7 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 				}*/
 			}
 		}
-		System.out.println("Outliers removed");
-		System.out.println("Reseting to initial state");
-		List<Cluster> cl=getClusters(q);
-		List<Point> pl=getPoints(cl);
-		T=new kdtree();
-		T.insertNode(pl);
-		computeClosestSecondPass(cl, T);
-		q=initializePriorityQueue(cl);
-		hmap=buildHMap(cl);
+		
 		
 		
 	}
