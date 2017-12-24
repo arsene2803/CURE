@@ -26,7 +26,7 @@ public class testRun {
 	static double kd_time=0;
 	static double merge_time=0;
 	static double itr_time=0;
-	public static void run_merge(List<String> values) {
+	public static void run_merge(List<String> values) throws IOException {
 		int k=15,c=56;
 		double alpha=0.8;
 		//each point will be individual cluster
@@ -467,7 +467,7 @@ public class testRun {
 		
 	}
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		List<String> input=new ArrayList<>();
 		//read from csv file
 		List<String[]> inp=readCSV("input.csv");

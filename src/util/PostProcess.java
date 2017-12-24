@@ -80,7 +80,7 @@ public class PostProcess {
 		System.out.println("Starting to compute CURE secondPass");
         try {
 			//computeCluster(k, c, alpha, Q,T);
-        	Curereducer.computeClusterHashMap(k, c, alpha, Q, T, cl);
+        	Q=Curereducer.computeClusterHashMap(k, c, alpha, Q, T, cl);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -130,7 +130,7 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 		System.out.println("Starting to compute CURE");
         try {
 			//computeCluster(k, c, alpha, Q,T);
-        	computeClusterHashMap(k, c, alpha, Q, T, cl);
+        	 Q=computeClusterHashMap(k, c, alpha, Q, T, cl);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -529,7 +529,7 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 			Q.add(w);	
 		}
 	}
-	public static void computeClusterHashMap(int k, int c, double alpha, PriorityQueue<Cluster> Q,kdtree T,List<Cluster> cl) throws Exception {
+	public static PriorityQueue<Cluster> computeClusterHashMap(int k, int c, double alpha, PriorityQueue<Cluster> Q,kdtree T,List<Cluster> cl) throws Exception {
 		System.out.println("Computing clusters using CURE using HASHMAP optimization");
 		//build a hashmap 
 		Map<Cluster, List<Cluster>> hmap = buildHMap(cl);
@@ -665,6 +665,7 @@ public class Curereducer extends Reducer<LongWritable, Text, Text, Text> {
 				hmap=buildHMap(rem_cl);
 			}
 		}
+		return Q;
 	}
 	public static Map<Cluster, List<Cluster>> buildHMap(List<Cluster> cl) {
 		Map<Cluster,List<Cluster>> hmap=new HashMap<>();

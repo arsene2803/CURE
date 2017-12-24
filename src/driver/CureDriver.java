@@ -34,15 +34,16 @@ public class CureDriver {
 	public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException {
 		
 		//Checking for the number of arguments
-		if(args.length != 3) {
+		if(args.length != 4) {
 			System.out.println(args.length);
-			throw new IllegalArgumentException("Arguments expected- input output Number_Of_partitions"
+			throw new IllegalArgumentException("Arguments expected- input output Number_Of_partitions sampling_rate%"
 					);
 		}
 		
 		//creating configuration object
 		Configuration conf=new Configuration();
 		conf.set("numPart",args[2]);
+		conf.set("srate", args[3]);
 		conf.set("pass","1");
 		Job job=Job.getInstance(conf,"FIRST_PASS_CUREJOB");
 		job.setJarByClass(CureDriver.class);

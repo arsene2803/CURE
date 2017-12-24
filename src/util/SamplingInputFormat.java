@@ -12,12 +12,12 @@ import org.apache.hadoop.mapreduce.InputSplit;
 public class SamplingInputFormat extends TextInputFormat{
 
 	@Override
-	public List<org.apache.hadoop.mapreduce.InputSplit> getSplits(JobContext arg0) throws IOException {
+	public List<org.apache.hadoop.mapreduce.InputSplit> getSplits(JobContext job) throws IOException {
 		// TODO Auto-generated method stub
 		int i;
 		Random r=new Random();
-		final double samp_percen=0.6;
-		List<InputSplit> totalIs=super.getSplits(arg0);
+		final double samp_percen=Double.parseDouble(job.getConfiguration().get("srate"));
+		List<InputSplit> totalIs=super.getSplits(job);
 		int k=(int) Math.ceil(totalIs.size() *samp_percen);
 		
 		if(k==0) {
